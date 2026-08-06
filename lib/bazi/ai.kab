@@ -1,0 +1,7 @@
+@version "1.0.0"
+
+// bazi/ai — aggregator. import "bazi/ai"
+pub import "bazi/ai/patrol"
+pub import "bazi/ai/follow"
+pub import "bazi/ai/flee"
+pub import "bazi/ai/stateMachine"

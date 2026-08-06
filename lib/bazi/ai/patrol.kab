@@ -1,0 +1,37 @@
+@version "1.0.0"
+
+// import "bazi/ai/patrol"
+
+pub fn createPatrol(points, speed) {
+    if speed == null || speed == undefined { speed = 3.0 }
+    return {
+        "kind": "Patrol",
+        "points": points,
+        "index": 0,
+        "speed": speed,
+        "x": points[0]["x"],
+        "z": points[0]["z"]
+    }
+}
+
+pub fn stepPatrol(patrol, dt) {
+    if dt == null || dt == undefined { dt = 0.016 }
+    let pts = patrol["points"]
+    if len(pts) == 0 {
+        return patrol
+    }
+    let target = pts[patrol["index"]]
+    let dx = target["x"] - patrol["x"]
+    let dz = target["z"] - patrol["z"]
+    let dist = sqrt(dx * dx + dz * dz)
+    let step = patrol["speed"] * dt
+    if dist <= step || dist < 0.001 {
+        patrol["x"] = target["x"]
+        patrol["z"] = target["z"]
+        patrol["index"] = (patrol["index"] + 1) % len(pts)
+    } else {
+        patrol["x"] = patrol["x"] + dx / dist * step
+        patrol["z"] = patrol["z"] + dz / dist * step
+    }
+    return patrol
+}

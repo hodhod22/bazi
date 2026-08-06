@@ -1,0 +1,53 @@
+@version "1.0.0"
+
+// import "bazi/extras/stealth"
+
+pub fn createStealthAgent(x, z, sightRange, sightFov, hearingRange) {
+    if sightRange == null || sightRange == undefined { sightRange = 8.0 }
+    if sightFov == null || sightFov == undefined { sightFov = 1.2 }
+    if hearingRange == null || hearingRange == undefined { hearingRange = 5.0 }
+    return {
+        "kind": "StealthAgent",
+        "x": x,
+        "z": z,
+        "yaw": 0.0,
+        "sightRange": sightRange,
+        "sightFov": sightFov,
+        "hearingRange": hearingRange,
+        "alert": 0.0
+    }
+}
+
+pub fn createNoiseEvent(x, z, loudness) {
+    if loudness == null || loudness == undefined { loudness = 1.0 }
+    return { "kind": "Noise", "x": x, "z": z, "loudness": loudness }
+}
+
+pub fn stealthCanSee(agent, targetX, targetZ) {
+    let dx = targetX - agent["x"]
+    let dz = targetZ - agent["z"]
+    let dist2 = dx * dx + dz * dz
+    let r = agent["sightRange"]
+    if dist2 > r * r {
+        return false
+    }
+    let ang = atan2(dx, 0.0 - dz)
+    let diff = ang - agent["yaw"]
+    while diff > 3.14159265 { diff = diff - 6.2831853 }
+    while diff < 0.0 - 3.14159265 { diff = diff + 6.2831853 }
+    if diff < 0.0 { diff = 0.0 - diff }
+    return diff <= agent["sightFov"] * 0.5
+}
+
+pub fn stealthHear(agent, noise) {
+    let dx = noise["x"] - agent["x"]
+    let dz = noise["z"] - agent["z"]
+    let dist = sqrt(dx * dx + dz * dz)
+    let reach = agent["hearingRange"] * noise["loudness"]
+    if dist <= reach {
+        agent["alert"] = agent["alert"] + (1.0 - dist / reach)
+        if agent["alert"] > 1.0 { agent["alert"] = 1.0 }
+        return { "agent": agent, "heard": true }
+    }
+    return { "agent": agent, "heard": false }
+}

@@ -1,0 +1,53 @@
+@version "1.0.0"
+
+// import "bazi/extras/inventory"
+
+pub fn createInventory(capacity) {
+    if capacity == null || capacity == undefined { capacity = 16 }
+    return { "kind": "Inventory", "capacity": capacity, "slots": [] }
+}
+
+pub fn createItem(id, name, stack, maxStack) {
+    if stack == null || stack == undefined { stack = 1 }
+    if maxStack == null || maxStack == undefined { maxStack = 99 }
+    return { "id": id, "name": name, "stack": stack, "maxStack": maxStack }
+}
+
+pub fn inventoryAdd(inv, item) {
+    let slots = inv["slots"]
+    let i = 0
+    while i < len(slots) {
+        let s = slots[i]
+        if s["id"] == item["id"] && s["stack"] < s["maxStack"] {
+            let room = s["maxStack"] - s["stack"]
+            let take = item["stack"]
+            if take > room { take = room }
+            s["stack"] = s["stack"] + take
+            item["stack"] = item["stack"] - take
+            slots[i] = s
+            if item["stack"] <= 0 {
+                inv["slots"] = slots
+                return { "inventory": inv, "ok": true, "leftover": null }
+            }
+        }
+        i = i + 1
+    }
+    if len(slots) >= inv["capacity"] {
+        return { "inventory": inv, "ok": false, "leftover": item }
+    }
+    inv["slots"] = push(slots, item)
+    return { "inventory": inv, "ok": true, "leftover": null }
+}
+
+pub fn inventoryCount(inv, itemId) {
+    let n = 0
+    let slots = inv["slots"]
+    let i = 0
+    while i < len(slots) {
+        if slots[i]["id"] == itemId {
+            n = n + slots[i]["stack"]
+        }
+        i = i + 1
+    }
+    return n
+}

@@ -1,0 +1,5 @@
+.kabootar/
+*.kbc
+target/
+.DS_Store
+Thumbs.db

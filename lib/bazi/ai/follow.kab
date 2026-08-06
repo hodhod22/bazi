@@ -1,0 +1,31 @@
+@version "1.0.0"
+
+// import "bazi/ai/follow"
+
+pub fn createFollow(x, z, speed, stopDist) {
+    if speed == null || speed == undefined { speed = 4.0 }
+    if stopDist == null || stopDist == undefined { stopDist = 1.5 }
+    return {
+        "kind": "Follow",
+        "x": x,
+        "z": z,
+        "speed": speed,
+        "stopDist": stopDist
+    }
+}
+
+pub fn stepFollow(f, targetX, targetZ, dt) {
+    if dt == null || dt == undefined { dt = 0.016 }
+    let dx = targetX - f["x"]
+    let dz = targetZ - f["z"]
+    let dist = sqrt(dx * dx + dz * dz)
+    if dist > f["stopDist"] && dist > 0.001 {
+        let step = f["speed"] * dt
+        if step > dist - f["stopDist"] {
+            step = dist - f["stopDist"]
+        }
+        f["x"] = f["x"] + dx / dist * step
+        f["z"] = f["z"] + dz / dist * step
+    }
+    return f
+}

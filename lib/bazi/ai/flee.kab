@@ -1,0 +1,28 @@
+@version "1.0.0"
+
+// import "bazi/ai/flee"
+
+pub fn createFlee(x, z, speed, panicDist) {
+    if speed == null || speed == undefined { speed = 5.0 }
+    if panicDist == null || panicDist == undefined { panicDist = 6.0 }
+    return {
+        "kind": "Flee",
+        "x": x,
+        "z": z,
+        "speed": speed,
+        "panicDist": panicDist
+    }
+}
+
+pub fn stepFlee(f, threatX, threatZ, dt) {
+    if dt == null || dt == undefined { dt = 0.016 }
+    let dx = f["x"] - threatX
+    let dz = f["z"] - threatZ
+    let dist = sqrt(dx * dx + dz * dz)
+    if dist < f["panicDist"] && dist > 0.001 {
+        let step = f["speed"] * dt
+        f["x"] = f["x"] + dx / dist * step
+        f["z"] = f["z"] + dz / dist * step
+    }
+    return f
+}

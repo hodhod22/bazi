@@ -1,0 +1,47 @@
+@version "1.0.0"
+
+// import "bazi/extras/rope"
+
+pub fn createRope(anchorX, anchorY, length, bobMass) {
+    if length == null || length == undefined { length = 3.0 }
+    if bobMass == null || bobMass == undefined { bobMass = 1.0 }
+    return {
+        "kind": "Rope",
+        "ax": anchorX,
+        "ay": anchorY,
+        "length": length,
+        "angle": 0.0,
+        "omega": 0.0,
+        "mass": bobMass,
+        "climbing": false,
+        "climbT": 1.0
+    }
+}
+
+pub fn stepRopePendulum(rope, dt, gravity) {
+    if dt == null || dt == undefined { dt = 0.016 }
+    if gravity == null || gravity == undefined { gravity = 9.81 }
+    let alpha = (0.0 - gravity / rope["length"]) * sin(rope["angle"])
+    rope["omega"] = rope["omega"] + alpha * dt
+    rope["angle"] = rope["angle"] + rope["omega"] * dt
+    return rope
+}
+
+pub fn ropeBobPos(rope) {
+    let t = rope["climbT"]
+    if t < 0.0 { t = 0.0 }
+    if t > 1.0 { t = 1.0 }
+    let L = rope["length"] * t
+    return {
+        "x": rope["ax"] + sin(rope["angle"]) * L,
+        "y": rope["ay"] - cos(rope["angle"]) * L
+    }
+}
+
+pub fn ropeClimb(rope, delta) {
+    rope["climbT"] = rope["climbT"] + delta
+    if rope["climbT"] < 0.05 { rope["climbT"] = 0.05 }
+    if rope["climbT"] > 1.0 { rope["climbT"] = 1.0 }
+    rope["climbing"] = true
+    return rope
+}

@@ -1,0 +1,6 @@
+@version "1.0.0"
+
+// bazi — opt-in aggregator (core + extras + ai). import "bazi"
+pub import "bazi/core"
+pub import "bazi/extras"
+pub import "bazi/ai"

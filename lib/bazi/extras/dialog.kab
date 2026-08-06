@@ -1,0 +1,56 @@
+@version "1.0.0"
+
+// import "bazi/extras/dialog"
+
+pub fn createDialogTree(nodes, startId) {
+    if startId == null || startId == undefined { startId = "start" }
+    return { "kind": "DialogTree", "nodes": nodes, "startId": startId }
+}
+
+pub fn createDialogSession(tree) {
+    return {
+        "kind": "DialogSession",
+        "tree": tree,
+        "current": tree["startId"],
+        "active": true,
+        "history": []
+    }
+}
+
+pub fn dialogCurrentNode(session) {
+    let id = session["current"]
+    let nodes = session["tree"]["nodes"]
+    let i = 0
+    while i < len(nodes) {
+        if nodes[i]["id"] == id {
+            return nodes[i]
+        }
+        i = i + 1
+    }
+    return null
+}
+
+pub fn dialogChoose(session, choiceIndex) {
+    let node = dialogCurrentNode(session)
+    if node == null || node == undefined {
+        session["active"] = false
+        return session
+    }
+    let choices = node["choices"]
+    if choices == null || choices == undefined || len(choices) == 0 {
+        session["active"] = false
+        return session
+    }
+    if choiceIndex < 0 || choiceIndex >= len(choices) {
+        return session
+    }
+    session["history"] = push(session["history"], session["current"])
+    let next = choices[choiceIndex]["next"]
+    if next == null || next == undefined {
+        session["active"] = false
+        session["current"] = null
+    } else {
+        session["current"] = next
+    }
+    return session
+}

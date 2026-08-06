@@ -1,0 +1,10 @@
+@version "1.0.0"
+
+// bazi/extras — aggregator for optional extras. import "bazi/extras"
+pub import "bazi/extras/vehicle"
+pub import "bazi/extras/inventory"
+pub import "bazi/extras/rope"
+pub import "bazi/extras/dialog"
+pub import "bazi/extras/stealth"
+pub import "bazi/extras/turret"
+pub import "bazi/extras/puzzle"

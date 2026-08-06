@@ -1,0 +1,56 @@
+@version "1.0.0"
+
+// import "bazi/extras/turret"
+
+pub fn createTurret(x, z, range, turnRate, fireCooldown) {
+    if range == null || range == undefined { range = 10.0 }
+    if turnRate == null || turnRate == undefined { turnRate = 3.0 }
+    if fireCooldown == null || fireCooldown == undefined { fireCooldown = 0.5 }
+    return {
+        "kind": "Turret",
+        "x": x,
+        "z": z,
+        "yaw": 0.0,
+        "range": range,
+        "turnRate": turnRate,
+        "cooldown": 0.0,
+        "fireCooldown": fireCooldown,
+        "targetX": null,
+        "targetZ": null
+    }
+}
+
+pub fn turretSetTarget(t, tx, tz) {
+    t["targetX"] = tx
+    t["targetZ"] = tz
+    return t
+}
+
+pub fn stepTurret(t, dt) {
+    if dt == null || dt == undefined { dt = 0.016 }
+    if t["cooldown"] > 0.0 {
+        t["cooldown"] = t["cooldown"] - dt
+        if t["cooldown"] < 0.0 { t["cooldown"] = 0.0 }
+    }
+    let fired = false
+    if t["targetX"] != null && t["targetX"] != undefined {
+        let dx = t["targetX"] - t["x"]
+        let dz = t["targetZ"] - t["z"]
+        let dist = sqrt(dx * dx + dz * dz)
+        if dist <= t["range"] && dist > 0.001 {
+            let want = atan2(dx, 0.0 - dz)
+            let diff = want - t["yaw"]
+            while diff > 3.14159265 { diff = diff - 6.2831853 }
+            while diff < 0.0 - 3.14159265 { diff = diff + 6.2831853 }
+            let step = t["turnRate"] * dt
+            if diff > step { diff = step }
+            if diff < 0.0 - step { diff = 0.0 - step }
+            t["yaw"] = t["yaw"] + diff
+            if diff < 0.05 && diff > 0.0 - 0.05 && t["cooldown"] <= 0.0 {
+                t["cooldown"] = t["fireCooldown"]
+                fired = true
+            }
+        }
+    }
+    return { "turret": t, "fired": fired }
+}

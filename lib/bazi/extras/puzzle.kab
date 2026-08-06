@@ -1,0 +1,43 @@
+@version "1.0.0"
+
+// import "bazi/extras/puzzle"
+
+pub fn createButton(id, x, z, radius) {
+    if radius == null || radius == undefined { radius = 0.75 }
+    return { "kind": "PuzzleButton", "id": id, "x": x, "z": z, "radius": radius, "pressed": false }
+}
+
+pub fn createCrate(id, x, z, w, d) {
+    if w == null || w == undefined { w = 1.0 }
+    if d == null || d == undefined { d = 1.0 }
+    return { "kind": "PuzzleCrate", "id": id, "x": x, "z": z, "w": w, "d": d }
+}
+
+pub fn pressButtonIfNear(btn, px, pz) {
+    let dx = px - btn["x"]
+    let dz = pz - btn["z"]
+    if dx * dx + dz * dz <= btn["radius"] * btn["radius"] {
+        btn["pressed"] = true
+    }
+    return btn
+}
+
+pub fn createGate(id, locked) {
+    if locked == null || locked == undefined { locked = true }
+    return { "kind": "PuzzleGate", "id": id, "locked": locked }
+}
+
+pub fn unlockGateIfButtons(gate, buttons) {
+    let i = 0
+    let all = true
+    while i < len(buttons) {
+        if buttons[i]["pressed"] != true {
+            all = false
+        }
+        i = i + 1
+    }
+    if all {
+        gate["locked"] = false
+    }
+    return gate
+}
