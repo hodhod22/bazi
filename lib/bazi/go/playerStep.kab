@@ -1,11 +1,13 @@
 @version "1.0.0"
 
 // import "bazi/go/playerStep"
+import "game/input"
+import "bazi/go/component"
 import "bazi/go/ctx"
 import "bazi/core/movement"
 import "bazi/core/transform"
 
-/// Minimal PlayerInput (avoids pulling game/physics via bazi/core/player).
+/// Minimal PlayerInput (same shape as bazi/core/player).
 pub fn goCreatePlayerInput(actions) {
     if actions == null || actions == undefined {
         actions = {
@@ -25,6 +27,38 @@ pub fn goCreatePlayerInput(actions) {
         "jump": false,
         "attack": false
     }
+}
+
+/// Sample keys into PlayerInput + Movement wish (call before tick).
+pub fn drivePlayerInput(scene, id) {
+    let input = getComp(scene, id, "PlayerInput")
+    let mov = getComp(scene, id, "Movement")
+    if input == null || mov == null {
+        return scene
+    }
+    let ax = 0.0
+    let az = 0.0
+    if actionPressed(input["actions"], "left") {
+        ax = ax - 1.0
+    }
+    if actionPressed(input["actions"], "right") {
+        ax = ax + 1.0
+    }
+    if actionPressed(input["actions"], "forward") {
+        az = az - 1.0
+    }
+    if actionPressed(input["actions"], "back") {
+        az = az + 1.0
+    }
+    input["wishX"] = ax
+    input["wishZ"] = az
+    input["jump"] = actionPressed(input["actions"], "jump")
+    input["attack"] = actionPressed(input["actions"], "attack")
+    mov["wishX"] = ax
+    mov["wishZ"] = az
+    scene = addComp(scene, id, "PlayerInput", input)
+    scene = addComp(scene, id, "Movement", mov)
+    return scene
 }
 
 /// Wish -> Movement -> Transform step; sync CharacterController pose.

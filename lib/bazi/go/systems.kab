@@ -1,0 +1,52 @@
+@version "1.0.0"
+
+// import "bazi/go/systems"
+// Query systems (faster than per-object Update) - GuardBrain chase/patrol/flee.
+import "bazi/go/component"
+import "bazi/core/transform"
+import "bazi/ai/brain"
+
+/// Attach GuardBrain ECS component (pair with a lifecycle behaviour on the GO).
+pub fn attachGuard(scene, id, points, patrolSpeed, chaseSpeed, fleeSpeed, aggroDist) {
+    if points == null || points == undefined {
+        let t0 = getComp(scene, id, "Transform")
+        points = [{ "x": t0["x"], "z": t0["z"] }, { "x": t0["x"] + 6.0, "z": t0["z"] }]
+    }
+    let brain = createGuardBrain(points, patrolSpeed, chaseSpeed, fleeSpeed, aggroDist, 1.4, 0.25)
+    let t = getComp(scene, id, "Transform")
+    if t != null {
+        brain["x"] = t["x"]
+        brain["z"] = t["z"]
+    }
+    return addComp(scene, id, "GuardBrain", brain)
+}
+
+/// Step all GuardBrain components toward the player Transform.
+pub fn systemGuardChase(scene, playerId, dt) {
+    if dt == null || dt == undefined { dt = 0.016 }
+    let pt = getComp(scene, playerId, "Transform")
+    if pt == null || pt == undefined {
+        return scene
+    }
+    let target = { "x": pt["x"], "z": pt["z"] }
+    let q = queryComp(scene, "GuardBrain")
+    let i = 0
+    while i < len(q) {
+        let id = q[i]["id"]
+        let brain = q[i]["data"]
+        let hpFrac = 1.0
+        let hp = getComp(scene, id, "Health")
+        if hp != null && hp["max"] > 0.0 {
+            hpFrac = hp["current"] / hp["max"]
+        }
+        brain = stepGuardBrain(brain, target, hpFrac, dt)
+        let t = getComp(scene, id, "Transform")
+        if t != null {
+            t = setTransformPos(t, brain["x"], t["y"], brain["z"])
+            scene = addComp(scene, id, "Transform", t)
+        }
+        scene = addComp(scene, id, "GuardBrain", brain)
+        i = i + 1
+    }
+    return scene
+}

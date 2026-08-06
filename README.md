@@ -63,7 +63,9 @@ Snabbaste vägen (ingen klass): `addBehaviourFn(scene, id, myUpdateFn)`.
 Lifecycle (`addBehaviourSpawn`): `onSpawn` → `update` → `onDestroy` (via `destroyGo`).  
 Prefab: `spawnCoreGo(scene, "Player", x, y, z, hp, speed)`.  
 Uppslag: `findGo(scene, "Player")`.  
-PlayerInput-helper: `goCreatePlayerInput(null)` + wish-driven move i `update` (se `go_playable.kab`).
+Input: `drivePlayerInput(scene, playerId)` före `tick` (wish → PlayerBrain; `autoWish*` som fallback).  
+AI: `import "bazi/go/systems"` → `attachGuard` + `systemGuardChase` (query-system).  
+Window: `examples/go_window.kab` (raf + input + chase + kamera-följ).
 
 ### Core / combat (rå ECS)
 
@@ -99,6 +101,7 @@ templates/                 # behaviour.kab, guard.kab, …
 ```bash
 cd ../nova-interpreter
 export KABOOTAR_PATH="$(pwd)/../bazi/lib"
+kabootar run ../bazi/examples/go_window.kab
 kabootar run ../bazi/examples/go_playable.kab
 kabootar run ../bazi/examples/go_behaviours.kab
 kabootar run ../bazi/examples/go_player.kab

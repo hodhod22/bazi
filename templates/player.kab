@@ -1,6 +1,7 @@
 @version "1.0.0"
 
 // Starter PlayerBrain - copy into your game.
+// Frame loop: drivePlayerInput(scene, id) then tick(scene, dt).
 import "bazi/go"
 
 class PlayerBrain {
@@ -20,8 +21,14 @@ class PlayerBrain {
         let mov = get(ctx, "Movement")
         let t = get(ctx, "Transform")
         if mov != null && t != null {
-            t["x"] = t["x"] + mov["speed"] * self.autoWishX * ctx["dt"]
-            t["z"] = t["z"] + mov["speed"] * self.autoWishZ * ctx["dt"]
+            let wx = mov["wishX"]
+            let wz = mov["wishZ"]
+            if wx == 0.0 && wz == 0.0 {
+                wx = self.autoWishX
+                wz = self.autoWishZ
+            }
+            t["x"] = t["x"] + mov["speed"] * wx * ctx["dt"]
+            t["z"] = t["z"] + mov["speed"] * wz * ctx["dt"]
             ctx = set(ctx, "Transform", t)
         }
         return done(ctx, self)

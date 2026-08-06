@@ -1,13 +1,16 @@
 @version "1.0.0"
 
-// Mini scenario: Player moves + Enemy onSpawn/onDestroy via destroyGo.
+// Headless: drivePlayerInput + PlayerBrain + GuardBrain system + destroyGo.
 import "bazi/go"
+import "bazi/go/systems"
 
 class PlayerBrain {
     autoWishX: Number
+    autoWishZ: Number
     frames: Number
     fn init() {
         self.autoWishX = 1.0
+        self.autoWishZ = 0.0
         self.frames = 0.0
     }
     fn onSpawn(ctx) {
@@ -20,7 +23,14 @@ class PlayerBrain {
         let mov = get(ctx, "Movement")
         let t = get(ctx, "Transform")
         if mov != null && t != null {
-            t["x"] = t["x"] + mov["speed"] * self.autoWishX * ctx["dt"]
+            let wx = mov["wishX"]
+            let wz = mov["wishZ"]
+            if wx == 0.0 && wz == 0.0 {
+                wx = self.autoWishX
+                wz = self.autoWishZ
+            }
+            t["x"] = t["x"] + mov["speed"] * wx * ctx["dt"]
+            t["z"] = t["z"] + mov["speed"] * wz * ctx["dt"]
             ctx = set(ctx, "Transform", t)
         }
         self.frames = self.frames + 1.0
@@ -28,33 +38,6 @@ class PlayerBrain {
     }
     fn onDestroy(ctx) {
         return ctx["done"](ctx, self)
-    }
-}
-
-class EnemyMarker {
-    aliveFlag: Number
-    fn init() {
-        self.aliveFlag = 1.0
-    }
-    fn onSpawn(ctx) {
-        let get = ctx["get"]
-        let set = ctx["set"]
-        let done = ctx["done"]
-        let t = get(ctx, "Transform")
-        if t != null {
-            t["x"] = 10.0
-            ctx = set(ctx, "Transform", t)
-        }
-        self.aliveFlag = 1.0
-        return done(ctx, self)
-    }
-    fn update(ctx) {
-        return ctx["done"](ctx, self)
-    }
-    fn onDestroy(ctx) {
-        let done = ctx["done"]
-        self.aliveFlag = 0.0
-        return done(ctx, self)
     }
 }
 
@@ -66,23 +49,32 @@ let playerId = p["id"]
 scene = addComp(scene, playerId, "PlayerInput", goCreatePlayerInput(null))
 scene = addBehaviourSpawn(scene, playerId, PlayerBrain())
 
-let e = spawnCoreGo(scene, "Enemy", 10.0, 1.0, 0.0, 50.0, 3.0)
+let e = spawnCoreGo(scene, "Enemy", 8.0, 1.0, 0.0, 50.0, 3.0)
 scene = e["scene"]
 let enemyId = e["id"]
-scene = addBehaviourSpawn(scene, enemyId, EnemyMarker())
+scene = attachGuard(scene, enemyId, [
+    { "x": 8.0, "z": 0.0 },
+    { "x": 12.0, "z": 0.0 }
+], 2.0, 6.0, 7.0, 20.0)
 
+scene = drivePlayerInput(scene, playerId)
 scene = tick(scene, 0.1)
+scene = systemGuardChase(scene, playerId, 0.1)
 scene = tick(scene, 0.1)
+scene = systemGuardChase(scene, playerId, 0.1)
 scene = tick(scene, 0.1)
+scene = systemGuardChase(scene, playerId, 0.1)
 scene = tick(scene, 0.1)
-scene = tick(scene, 0.1)
+scene = systemGuardChase(scene, playerId, 0.1)
 
 let pt = getComp(scene, playerId, "Transform")
-println(pt["x"])
-println(goIsAlive(scene, enemyId))
+let et = getComp(scene, enemyId, "Transform")
+let brain = getComp(scene, enemyId, "GuardBrain")
+println(pt["x"] > 0.0)
+println(et["x"] < 8.0)
+println(brain["sm"]["current"])
 println(behaviourCount(scene))
 
 scene = destroyGo(scene, enemyId)
 println(goIsAlive(scene, enemyId))
 println(behaviourCount(scene))
-println(findGo(scene, "Player") == playerId)

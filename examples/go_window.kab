@@ -1,0 +1,77 @@
+@version "1.0.0"
+
+// raf + input + chase + camera-follow render (leaf imports).
+import "bazi/go/scene"
+import "bazi/go/component"
+import "bazi/go/playerStep"
+import "bazi/core/transform"
+import "bazi/core/movement"
+import "bazi/ai/follow"
+
+platform_use("kabootar")
+let surf = game_surface_create(320, 200)
+let g = surf["ctx"]
+
+let scene = createScene()
+let ps = spawnGo(scene, "Player")
+scene = ps["scene"]
+let playerId = ps["id"]
+scene = addComp(scene, playerId, "Transform", createTransform(0.0, 0.0, 0.0))
+scene = addComp(scene, playerId, "Movement", createMovement(80.0))
+scene = addComp(scene, playerId, "PlayerInput", goCreatePlayerInput(null))
+
+let es = spawnGo(scene, "Enemy")
+scene = es["scene"]
+let enemyId = es["id"]
+scene = addComp(scene, enemyId, "Transform", createTransform(8.0, 0.0, 2.0))
+let chase = createFollow(8.0, 2.0, 40.0, 1.2)
+
+let frames = 0
+let camX = 0.0
+let camZ = 0.0
+
+fn onFrame(delta_ms) {
+    let dt = delta_ms / 1000.0
+    scene = drivePlayerInput(scene, playerId)
+    let mov = getComp(scene, playerId, "Movement")
+    let pt = getComp(scene, playerId, "Transform")
+    pt["x"] = pt["x"] + mov["speed"] * mov["wishX"] * dt
+    pt["z"] = pt["z"] + mov["speed"] * mov["wishZ"] * dt
+    scene = addComp(scene, playerId, "Transform", pt)
+    chase = stepFollow(chase, pt["x"], pt["z"], dt)
+    let et = getComp(scene, enemyId, "Transform")
+    et["x"] = chase["x"]
+    et["z"] = chase["z"]
+    scene = addComp(scene, enemyId, "Transform", et)
+    camX = pt["x"]
+    camZ = pt["z"]
+    g.fillStyle = "#0b1220"
+    g.fillRect(0, 0, 320, 200)
+    g.fillStyle = "#1a2a40"
+    g.fillRect(0, 0, 320, 200)
+    g.fillStyle = "#c05040"
+    g.fillRect((et["x"] - camX) * 12.0 + 152.0, (et["z"] - camZ) * 12.0 + 92.0, 16.0, 16.0)
+    g.fillStyle = "#40c080"
+    g.fillRect(151.0, 91.0, 18.0, 18.0)
+    surf.present()
+    frames = frames + 1
+}
+
+input_key_down("ArrowRight")
+requestAnimationFrame(onFrame)
+game_tick()
+requestAnimationFrame(onFrame)
+game_tick()
+requestAnimationFrame(onFrame)
+game_tick()
+input_key_up("ArrowRight")
+input_key_down("ArrowDown")
+requestAnimationFrame(onFrame)
+game_tick()
+input_key_up("ArrowDown")
+
+let pt = getComp(scene, playerId, "Transform")
+let et = getComp(scene, enemyId, "Transform")
+println(frames >= 4)
+println(pt["x"] != 0.0 || pt["z"] != 0.0)
+println(et["x"] != 8.0 || et["z"] != 2.0)
