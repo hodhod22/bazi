@@ -3,7 +3,7 @@
 // import "bazi/go/behaviour"
 // Dense behaviour list - tick is O(n), not a full ECS scan.
 
-/// Class with fn update(ctx). No onSpawn.
+/// Class with fn update(ctx). No onSpawn/onDestroy.
 pub fn addBehaviour(scene, id, script) {
     let behaviours = scene["behaviours"]
     behaviours = push(behaviours, {
@@ -12,13 +12,14 @@ pub fn addBehaviour(scene, id, script) {
         "enabled": true,
         "fn": false,
         "callSpawn": false,
+        "callDestroy": false,
         "started": true
     })
     scene["behaviours"] = behaviours
     return scene
 }
 
-/// Class with fn onSpawn(ctx) then fn update(ctx) each tick.
+/// Class lifecycle: onSpawn once, update each tick, onDestroy on destroyGo.
 pub fn addBehaviourSpawn(scene, id, script) {
     let behaviours = scene["behaviours"]
     behaviours = push(behaviours, {
@@ -27,13 +28,14 @@ pub fn addBehaviourSpawn(scene, id, script) {
         "enabled": true,
         "fn": false,
         "callSpawn": true,
+        "callDestroy": true,
         "started": false
     })
     scene["behaviours"] = behaviours
     return scene
 }
 
-/// Plain fn(ctx) -> ctx (fastest path).
+/// Plain fn(ctx) -> ctx (fastest path). Prefer class behaviours for now.
 pub fn addBehaviourFn(scene, id, updateFn) {
     let behaviours = scene["behaviours"]
     behaviours = push(behaviours, {
@@ -42,6 +44,7 @@ pub fn addBehaviourFn(scene, id, updateFn) {
         "enabled": true,
         "fn": true,
         "callSpawn": false,
+        "callDestroy": false,
         "started": true
     })
     scene["behaviours"] = behaviours

@@ -25,7 +25,11 @@ fn runClass(ctx, script, phase) {
     if phase == "spawn" {
         ctx = script.onSpawn(ctx)
     } else {
-        ctx = script.update(ctx)
+        if phase == "destroy" {
+            ctx = script.onDestroy(ctx)
+        } else {
+            ctx = script.update(ctx)
+        }
     }
     return ctx
 }

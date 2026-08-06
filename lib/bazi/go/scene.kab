@@ -2,6 +2,7 @@
 
 // import "bazi/go/scene"
 import "game/ecs"
+import "bazi/go/ctx"
 
 /// Scene = ECS world + dense behaviour list (cache-friendly tick).
 pub fn createScene() {
@@ -62,20 +63,42 @@ pub fn setGoActive(scene, id, active) {
     return scene
 }
 
+/// Destroy GO: call onDestroy on lifecycle behaviours, then drop them.
 pub fn destroyGo(scene, id) {
-    scene["alive"]["" + id] = false
     let behaviours = scene["behaviours"]
+    let world = scene["world"]
+    let names = scene["names"]
+    let name = names["" + id]
+    if name == undefined || name == null { name = "" }
     let next = []
     let i = 0
     while i < len(behaviours) {
         let b = behaviours[i]
-        if b["id"] != id {
+        if b["id"] == id {
+            if b["fn"] != true && b["callDestroy"] == true {
+                let ctx = {
+                    "world": world,
+                    "id": id,
+                    "dt": 0.0,
+                    "name": name,
+                    "script": b["script"],
+                    "get": goGet,
+                    "set": goSet,
+                    "has": goHas,
+                    "done": goDone
+                }
+                let script = b["script"]
+                ctx = script.onDestroy(ctx)
+                world = ctx["world"]
+            }
+        } else {
             next = push(next, b)
         }
         i = i + 1
     }
     scene["behaviours"] = next
-    let world = scene["world"]
+    scene["world"] = world
+    scene["alive"]["" + id] = false
     let go = get(world, id, "GameObject")
     if go != null && go != undefined {
         go["active"] = false

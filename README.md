@@ -60,9 +60,10 @@ scene = tick(scene, dt)   // kör alla behaviours
 
 Snabbaste vägen (ingen klass): `addBehaviourFn(scene, id, myUpdateFn)`.
 
-Med `onSpawn` (en gång): `addBehaviourSpawn(scene, id, Walker())`.  
+Lifecycle (`addBehaviourSpawn`): `onSpawn` → `update` → `onDestroy` (via `destroyGo`).  
 Prefab: `spawnCoreGo(scene, "Player", x, y, z, hp, speed)`.  
-Uppslag: `findGo(scene, "Player")`.
+Uppslag: `findGo(scene, "Player")`.  
+PlayerInput-helper: `goCreatePlayerInput(null)` + wish-driven move i `update` (se `go_playable.kab`).
 
 ### Core / combat (rå ECS)
 
@@ -98,6 +99,7 @@ templates/                 # behaviour.kab, guard.kab, …
 ```bash
 cd ../nova-interpreter
 export KABOOTAR_PATH="$(pwd)/../bazi/lib"
+kabootar run ../bazi/examples/go_playable.kab
 kabootar run ../bazi/examples/go_behaviours.kab
 kabootar run ../bazi/examples/go_player.kab
 kabootar run ../bazi/examples/minimal.kab
@@ -109,11 +111,13 @@ kabootar run ../bazi/examples/projectile_smoke.kab
 
 ## Licens
 
-Bazi är **proprietär** — se [LICENSE](LICENSE). Nuvarande årsavgift (USD):
+Bazi är **proprietär** — se [LICENSE](LICENSE).
+
+**Betallicens införs när första fasen (Phase 1) är klar.** Tills dess får du använda Bazi för utvärdering och utveckling utan betalning. Planerade priser därefter (USD / år):
 
 | Användare | Pris / år |
 |-----------|-----------|
 | Privatperson (Individual) | **$10** |
 | Företag (Company) | **$100** |
 
-Priserna kan höjas för kommande perioder (med förvarning); redan betald period påverkas inte. Källkod synlig ≠ gratis att använda.
+Priserna kan höjas senare (med förvarning). Äganderätt och “as is”-disclaimer gäller redan nu.

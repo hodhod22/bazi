@@ -1,0 +1,88 @@
+@version "1.0.0"
+
+// Mini scenario: Player moves + Enemy onSpawn/onDestroy via destroyGo.
+import "bazi/go"
+
+class PlayerBrain {
+    autoWishX: Number
+    frames: Number
+    fn init() {
+        self.autoWishX = 1.0
+        self.frames = 0.0
+    }
+    fn onSpawn(ctx) {
+        return ctx["done"](ctx, self)
+    }
+    fn update(ctx) {
+        let get = ctx["get"]
+        let set = ctx["set"]
+        let done = ctx["done"]
+        let mov = get(ctx, "Movement")
+        let t = get(ctx, "Transform")
+        if mov != null && t != null {
+            t["x"] = t["x"] + mov["speed"] * self.autoWishX * ctx["dt"]
+            ctx = set(ctx, "Transform", t)
+        }
+        self.frames = self.frames + 1.0
+        return done(ctx, self)
+    }
+    fn onDestroy(ctx) {
+        return ctx["done"](ctx, self)
+    }
+}
+
+class EnemyMarker {
+    aliveFlag: Number
+    fn init() {
+        self.aliveFlag = 1.0
+    }
+    fn onSpawn(ctx) {
+        let get = ctx["get"]
+        let set = ctx["set"]
+        let done = ctx["done"]
+        let t = get(ctx, "Transform")
+        if t != null {
+            t["x"] = 10.0
+            ctx = set(ctx, "Transform", t)
+        }
+        self.aliveFlag = 1.0
+        return done(ctx, self)
+    }
+    fn update(ctx) {
+        return ctx["done"](ctx, self)
+    }
+    fn onDestroy(ctx) {
+        let done = ctx["done"]
+        self.aliveFlag = 0.0
+        return done(ctx, self)
+    }
+}
+
+let scene = createScene()
+
+let p = spawnCoreGo(scene, "Player", 0.0, 1.0, 0.0, 100.0, 5.0)
+scene = p["scene"]
+let playerId = p["id"]
+scene = addComp(scene, playerId, "PlayerInput", goCreatePlayerInput(null))
+scene = addBehaviourSpawn(scene, playerId, PlayerBrain())
+
+let e = spawnCoreGo(scene, "Enemy", 10.0, 1.0, 0.0, 50.0, 3.0)
+scene = e["scene"]
+let enemyId = e["id"]
+scene = addBehaviourSpawn(scene, enemyId, EnemyMarker())
+
+scene = tick(scene, 0.1)
+scene = tick(scene, 0.1)
+scene = tick(scene, 0.1)
+scene = tick(scene, 0.1)
+scene = tick(scene, 0.1)
+
+let pt = getComp(scene, playerId, "Transform")
+println(pt["x"])
+println(goIsAlive(scene, enemyId))
+println(behaviourCount(scene))
+
+scene = destroyGo(scene, enemyId)
+println(goIsAlive(scene, enemyId))
+println(behaviourCount(scene))
+println(findGo(scene, "Player") == playerId)

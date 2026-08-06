@@ -33,6 +33,10 @@ class Walker {
         }
         return done(ctx, self)
     }
+    fn onDestroy(ctx) {
+        let done = ctx["done"]
+        return done(ctx, self)
+    }
 }
 
 let scene = createScene()

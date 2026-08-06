@@ -1,0 +1,32 @@
+@version "1.0.0"
+
+// Starter PlayerBrain - copy into your game.
+import "bazi/go"
+
+class PlayerBrain {
+    autoWishX: Number
+    autoWishZ: Number
+    fn init() {
+        self.autoWishX = 0.0
+        self.autoWishZ = 0.0
+    }
+    fn onSpawn(ctx) {
+        return ctx["done"](ctx, self)
+    }
+    fn update(ctx) {
+        let get = ctx["get"]
+        let set = ctx["set"]
+        let done = ctx["done"]
+        let mov = get(ctx, "Movement")
+        let t = get(ctx, "Transform")
+        if mov != null && t != null {
+            t["x"] = t["x"] + mov["speed"] * self.autoWishX * ctx["dt"]
+            t["z"] = t["z"] + mov["speed"] * self.autoWishZ * ctx["dt"]
+            ctx = set(ctx, "Transform", t)
+        }
+        return done(ctx, self)
+    }
+    fn onDestroy(ctx) {
+        return ctx["done"](ctx, self)
+    }
+}

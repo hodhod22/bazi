@@ -1,0 +1,51 @@
+@version "1.0.0"
+
+// import "bazi/go/playerStep"
+import "bazi/go/ctx"
+import "bazi/core/movement"
+import "bazi/core/transform"
+
+/// Minimal PlayerInput (avoids pulling game/physics via bazi/core/player).
+pub fn goCreatePlayerInput(actions) {
+    if actions == null || actions == undefined {
+        actions = {
+            "left": ["KeyA", "ArrowLeft"],
+            "right": ["KeyD", "ArrowRight"],
+            "forward": ["KeyW", "ArrowUp"],
+            "back": ["KeyS", "ArrowDown"],
+            "jump": ["Space"],
+            "attack": ["KeyF"]
+        }
+    }
+    return {
+        "kind": "PlayerInput",
+        "actions": actions,
+        "wishX": 0.0,
+        "wishZ": 0.0,
+        "jump": false,
+        "attack": false
+    }
+}
+
+/// Wish -> Movement -> Transform step; sync CharacterController pose.
+pub fn goStepPlayer(ctx, wishX, wishZ, jumpPressed, gravity, groundBoxes) {
+    if wishX == null || wishX == undefined { wishX = 0.0 }
+    if wishZ == null || wishZ == undefined { wishZ = 0.0 }
+    let mov = goGet(ctx, "Movement")
+    let t = goGet(ctx, "Transform")
+    if mov == null || t == null {
+        return ctx
+    }
+    mov = setMovementWish(mov, wishX, wishZ)
+    let stepped = stepMovement(mov, t, ctx["dt"])
+    mov = stepped["movement"]
+    t = stepped["transform"]
+    ctx = goSet(ctx, "Movement", mov)
+    ctx = goSet(ctx, "Transform", t)
+    let ctrl = goGet(ctx, "CharacterController")
+    if ctrl != null && ctrl != undefined {
+        ctrl = syncControllerFromTransform(ctrl, t)
+        ctx = goSet(ctx, "CharacterController", ctrl)
+    }
+    return ctx
+}

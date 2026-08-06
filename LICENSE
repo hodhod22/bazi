@@ -4,9 +4,21 @@ Version 1.0 — 2026-08-06
 Copyright (c) 2026 Bazi contributors / rights holder ("Licensor").
 All rights reserved.
 
+PHASE 1 NOTICE (IMPORTANT)
+
+  Paid licensing is NOT in force yet. The fee schedule and payment requirement
+  in this document will be introduced when Phase 1 of Bazi is complete.
+  Until Licensor publicly announces that Phase 1 is complete and paid licensing
+  has started, you may use the Software for evaluation and development without
+  payment. Ownership (Section 7) and the "AS IS" warranty disclaimer still apply.
+
+  After that announcement, a paid subscription will be required for continued
+  use under the terms below.
+
+
 This software and associated documentation files (the "Software") are proprietary.
-Viewing the source does not grant a license to use, copy, modify, distribute, or
-commercialize the Software. A paid subscription license is required.
+Viewing the source does not grant ownership. After Phase 1, a paid subscription
+license will be required as described in this document.
 
 
 1. DEFINITIONS
@@ -39,9 +51,10 @@ commercialize the Software. A paid subscription license is required.
   competing framework, or "Bazi-compatible" package, whether free or paid.
 
 
-3. FEES (CURRENT)
+3. FEES (WHEN PHASE 1 IS COMPLETE)
 
-  Current subscription fees (USD, per License Term):
+  Planned subscription fees (USD, per License Term), effective only after
+  Licensor announces that Phase 1 is complete and paid licensing has started:
 
     • Individual …………… USD $10 per year
     • Company ……………… USD $100 per year
@@ -50,8 +63,8 @@ commercialize the Software. A paid subscription license is required.
   working on that Company's projects. An Individual license covers one natural
   person only.
 
-  Payment method, invoicing, and activation are as published by Licensor
-  (website, invoice, or written agreement).
+  Payment method, invoicing, and activation will be published by Licensor
+  (website, invoice, or written agreement) when licensing is introduced.
 
 
 4. FUTURE PRICE CHANGES
