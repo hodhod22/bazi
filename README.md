@@ -101,6 +101,7 @@ templates/                 # behaviour.kab, guard.kab, …
 ```bash
 cd ../nova-interpreter
 export KABOOTAR_PATH="$(pwd)/../bazi/lib"
+kabootar run ../bazi/examples/go_arena.kab
 kabootar run ../bazi/examples/go_window.kab
 kabootar run ../bazi/examples/go_playable.kab
 kabootar run ../bazi/examples/go_behaviours.kab
@@ -112,15 +113,29 @@ kabootar run ../bazi/examples/inventory_ops.kab
 kabootar run ../bazi/examples/projectile_smoke.kab
 ```
 
-## Licens
+Import-regler (undvik hang): [docs/IMPORTS.md](docs/IMPORTS.md).
+
+## Phase 1
+
+| Klar | Bevis |
+|------|--------|
+| GO + lifecycle | `go_playable.kab` |
+| Fönster + input + chase | `go_window.kab` |
+| Arena win/lose | `go_arena.kab` |
+| Säljsida (checkout pending) | [`site/index.html`](site/index.html) |
+
+När ni publikt deklarerar Phase 1 klar: aktivera checkout ([`site/checkout.md`](site/checkout.md)).
+
+## Licens & köp
 
 Bazi är **proprietär** — se [LICENSE](LICENSE).
 
-**Betallicens införs när första fasen (Phase 1) är klar.** Tills dess får du använda Bazi för utvärdering och utveckling utan betalning. Planerade priser därefter (USD / år):
+**Betallicens införs när Phase 1 är klar och ni aktiverar checkout.** Tills dess: utvärdering/utveckling utan betalning. Planerade priser (USD / år):
 
 | Användare | Pris / år |
 |-----------|-----------|
 | Privatperson (Individual) | **$10** |
 | Företag (Company) | **$100** |
 
+Säljsida: öppna [`site/index.html`](site/index.html) (lokalt: `cd site && python -m http.server 8080`).
 Priserna kan höjas senare (med förvarning). Äganderätt och “as is”-disclaimer gäller redan nu.

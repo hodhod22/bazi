@@ -1,7 +1,13 @@
 @version "1.0.0"
 
 // Headless: drivePlayerInput + PlayerBrain + GuardBrain system + destroyGo.
-import "bazi/go"
+// Leaf imports (avoid import "bazi/go" + systems together in window demos).
+import "bazi/go/scene"
+import "bazi/go/component"
+import "bazi/go/behaviour"
+import "bazi/go/tick"
+import "bazi/go/prefab"
+import "bazi/go/playerStep"
 import "bazi/go/systems"
 
 class PlayerBrain {

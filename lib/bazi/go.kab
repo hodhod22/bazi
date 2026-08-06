@@ -1,7 +1,7 @@
 @version "1.0.0"
 
-// bazi/go - GameObject + Behaviour layer over ECS.
-// import "bazi/go"
+// bazi/go - discovery aggregator. Games should prefer leaf imports
+// (see docs/IMPORTS.md). Do not combine with bazi/go/systems + platform_use.
 // AI systems: import "bazi/go/systems" separately (heavier).
 pub import "bazi/go/scene"
 pub import "bazi/go/component"

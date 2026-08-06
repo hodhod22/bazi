@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bazi — Kabootar gameplay framework</title>
+  <style>
+    :root {
+      --bg0: #0e141c;
+      --bg1: #162232;
+      --ink: #e8eef6;
+      --muted: #9aafc4;
+      --accent: #3dba8c;
+      --line: #2a3d52;
+      --warn: #d4a24c;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(900px 480px at 12% -10%, #1c3a4a 0%, transparent 55%),
+        radial-gradient(700px 420px at 90% 0%, #243018 0%, transparent 50%),
+        linear-gradient(165deg, var(--bg0), var(--bg1) 55%, #101820);
+    }
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 4.5rem 1.25rem 3rem;
+    }
+    h1 {
+      font-size: clamp(2.4rem, 6vw, 3.4rem);
+      letter-spacing: -0.03em;
+      margin: 0 0 0.4rem;
+      font-weight: 700;
+    }
+    .tagline {
+      font-size: 1.1rem;
+      color: var(--muted);
+      margin: 0 0 1.75rem;
+      max-width: 36rem;
+      line-height: 1.45;
+    }
+    .phase {
+      border-left: 3px solid var(--warn);
+      padding: 0.75rem 1rem;
+      margin: 0 0 2rem;
+      color: var(--muted);
+      background: rgba(212, 162, 76, 0.08);
+    }
+    .phase strong { color: var(--warn); }
+    .plans {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: 1fr;
+    }
+    @media (min-width: 560px) {
+      .plans { grid-template-columns: 1fr 1fr; }
+    }
+    .plan {
+      border: 1px solid var(--line);
+      padding: 1.25rem 1.2rem 1.35rem;
+      background: rgba(8, 14, 22, 0.45);
+    }
+    .plan h2 {
+      margin: 0 0 0.35rem;
+      font-size: 1.15rem;
+    }
+    .price {
+      font-size: 2rem;
+      font-weight: 700;
+      margin: 0.2rem 0 0.6rem;
+    }
+    .price span {
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--muted);
+    }
+    .plan p {
+      margin: 0 0 1.1rem;
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.4;
+    }
+    a.buy {
+      display: inline-block;
+      text-decoration: none;
+      color: #07140f;
+      background: var(--accent);
+      padding: 0.55rem 1rem;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    a.buy[aria-disabled="true"] {
+      opacity: 0.45;
+      pointer-events: none;
+    }
+    .links {
+      margin-top: 2.25rem;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+    .links a { color: var(--ink); }
+    footer {
+      margin-top: 2.5rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Bazi</h1>
+    <p class="tagline">
+      GameObject + behaviours on Kabootar’s ECS — Unity-style packages you import
+      only when needed. Kabootar itself stays MIT; Bazi is the paid gameplay kit.
+    </p>
+
+    <div class="phase">
+      <strong>Phase 1 checkout not live yet.</strong>
+      Evaluation and development are free until we announce that Phase 1 is
+      complete and paid licensing has started. Buttons below activate when
+      Lemon Squeezy / Stripe product URLs are filled in
+      (<code>site/checkout.md</code>).
+    </div>
+
+    <div class="plans">
+      <article class="plan">
+        <h2>Individual</h2>
+        <p class="price">$10 <span>/ year</span></p>
+        <p>Personal projects, hobby games, freelance in your own name.</p>
+        <!-- Replace href when product is live (see checkout.md). -->
+        <a class="buy" id="buy-individual" href="#checkout-pending" aria-disabled="true">Buy Individual</a>
+      </article>
+      <article class="plan">
+        <h2>Company</h2>
+        <p class="price">$100 <span>/ year</span></p>
+        <p>Studios and companies shipping products that embed Bazi.</p>
+        <a class="buy" id="buy-company" href="#checkout-pending" aria-disabled="true">Buy Company</a>
+      </article>
+    </div>
+
+    <p class="links">
+      <a href="https://github.com/hodhod22/bazi">GitHub</a>
+      ·
+      <a href="https://github.com/hodhod22/bazi/blob/main/LICENSE">License</a>
+      ·
+      <a href="https://github.com/hodhod22/bazi/blob/main/examples/go_arena.kab">Arena demo</a>
+      ·
+      <a href="https://github.com/hodhod22/kabootar">Kabootar (MIT)</a>
+    </p>
+
+    <footer>
+      Prices may rise later with notice. Ownership and “as is” terms apply now —
+      see LICENSE.
+    </footer>
+  </main>
+
+  <script>
+    // Optional: override with live checkout URLs without editing HTML.
+    // window.BAZI_CHECKOUT = { individual: "https://...", company: "https://..." }
+    (function () {
+      var cfg = window.BAZI_CHECKOUT || {};
+      function wire(id, url) {
+        var el = document.getElementById(id);
+        if (!el || !url) return;
+        el.href = url;
+        el.removeAttribute("aria-disabled");
+      }
+      wire("buy-individual", cfg.individual);
+      wire("buy-company", cfg.company);
+    })();
+  </script>
+</body>
+</html>

@@ -1,6 +1,7 @@
 @version "1.0.0"
 
-// bazi - opt-in aggregator. Prefer leaf imports in games for faster compiles.
+// bazi - heavy discovery aggregator. Prefer leaf imports (docs/IMPORTS.md).
+// Do not use this in shipped games or window demos — compile hangs are common.
 // import "bazi"
 pub import "bazi/core"
 pub import "bazi/go"

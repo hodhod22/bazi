@@ -1,0 +1,40 @@
+@version "1.0.0"
+
+// Arena smoke: melee exchange, win when enemy HP hits 0.
+import "game/ecs"
+import "bazi/core"
+
+let w = createWorld()
+let playerId = spawn(w)
+w = attachCoreBundle(w, playerId, 0.0, 1.0, 0.0, 100.0, 8.0)
+let enemyId = spawn(w)
+w = attachCoreBundle(w, enemyId, 1.0, 1.0, 0.0, 40.0, 0.0)
+
+let result = "playing"
+let rounds = 0
+while rounds < 8 {
+    if result == "playing" {
+        let hit = damageEntity(w, enemyId, 15.0, playerId)
+        w = hit["world"]
+        let ehp = get(w, enemyId, "Health")
+        if ehp["alive"] == false {
+            result = "win"
+        } else {
+            let back = damageEntity(w, playerId, 5.0, enemyId)
+            w = back["world"]
+            let php = get(w, playerId, "Health")
+            if php["alive"] == false {
+                result = "lose"
+            }
+        }
+    }
+    rounds = rounds + 1
+}
+
+let php = get(w, playerId, "Health")
+let ehp = get(w, enemyId, "Health")
+println(result == "win")
+println(ehp["alive"] == false)
+println(php["alive"] == true)
+println(php["current"] < 100.0)
+println(rounds == 8)
