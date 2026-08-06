@@ -1,0 +1,39 @@
+@version "1.0.0"
+
+// GameObject + class behaviour smoke.
+import "bazi/go"
+import "bazi/core/transform"
+
+class Spin {
+    deg: Number
+    fn init() {
+        self.deg = 0.0
+    }
+    fn update(ctx) {
+        let get = ctx["get"]
+        let set = ctx["set"]
+        let done = ctx["done"]
+        self.deg = self.deg + 90.0 * ctx["dt"]
+        let t = get(ctx, "Transform")
+        if t != null {
+            t["yaw"] = self.deg
+            ctx = set(ctx, "Transform", t)
+        }
+        return done(ctx, self)
+    }
+}
+
+let scene = createScene()
+let spawned = spawnGo(scene, "Spinner")
+scene = spawned["scene"]
+let id = spawned["id"]
+scene = addComp(scene, id, "Transform", createTransform(0.0, 0.0, 0.0))
+scene = addBehaviour(scene, id, Spin())
+
+scene = tick(scene, 0.1)
+scene = tick(scene, 0.1)
+scene = tick(scene, 0.1)
+
+let t = getComp(scene, id, "Transform")
+println(t["yaw"])
+println(behaviourCount(scene))

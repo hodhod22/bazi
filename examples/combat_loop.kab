@@ -1,0 +1,33 @@
+@version "1.0.0"
+
+// Turret aim/fire -> damageEntity pipeline (hitscan smoke).
+import "game/ecs"
+import "bazi/core"
+import "bazi/extras/turret"
+
+let w = createWorld()
+let targetId = spawn(w)
+w = attachCoreBundle(w, targetId, 0.0, 1.0, 5.0, 100.0, 5.0)
+
+let turret = createTurret(0.0, 0.0, 12.0, 8.0, 0.2, 15.0)
+turret = turretSetTarget(turret, 0.0, 5.0)
+
+let shots = 0
+let time = 0.0
+let dt = 0.05
+while time < 1.5 {
+    let step = stepTurret(turret, dt)
+    turret = step["turret"]
+    if step["fired"] == true {
+        let shot = step["shot"]
+        let hit = damageEntity(w, targetId, shot["amount"], "turret")
+        w = hit["world"]
+        shots = shots + 1
+    }
+    time = time + dt
+}
+
+let hp = get(w, targetId, "Health")
+println(hp["current"])
+println(hp["alive"])
+println(shots)

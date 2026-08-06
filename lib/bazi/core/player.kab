@@ -1,0 +1,122 @@
+@version "1.0.0"
+
+// import "bazi/core/player"
+import "game/ecs"
+import "game/input"
+import "game/physics"
+import "bazi/core/transform"
+import "bazi/core/movement"
+
+pub fn createPlayerInput(actions) {
+    if actions == null || actions == undefined {
+        actions = {
+            "left": ["KeyA", "ArrowLeft"],
+            "right": ["KeyD", "ArrowRight"],
+            "forward": ["KeyW", "ArrowUp"],
+            "back": ["KeyS", "ArrowDown"],
+            "jump": ["Space"],
+            "attack": ["KeyF"]
+        }
+    }
+    return {
+        "kind": "PlayerInput",
+        "actions": actions,
+        "wishX": 0.0,
+        "wishZ": 0.0,
+        "jump": false,
+        "attack": false
+    }
+}
+
+pub fn samplePlayerInput(input) {
+    let ax = 0.0
+    let az = 0.0
+    if actionPressed(input["actions"], "left") {
+        ax = ax - 1.0
+    }
+    if actionPressed(input["actions"], "right") {
+        ax = ax + 1.0
+    }
+    if actionPressed(input["actions"], "forward") {
+        az = az - 1.0
+    }
+    if actionPressed(input["actions"], "back") {
+        az = az + 1.0
+    }
+    input["wishX"] = ax
+    input["wishZ"] = az
+    input["jump"] = actionPressed(input["actions"], "jump")
+    input["attack"] = actionPressed(input["actions"], "attack")
+    return input
+}
+
+pub fn createCharacterController(x, y, z, radius, height) {
+    if x == null || x == undefined { x = 0.0 }
+    if y == null || y == undefined { y = 0.0 }
+    if z == null || z == undefined { z = 0.0 }
+    if radius == null || radius == undefined { radius = 0.4 }
+    if height == null || height == undefined { height = 1.8 }
+    return {
+        "kind": "CharacterController",
+        "x": x,
+        "y": y,
+        "z": z,
+        "radius": radius,
+        "height": height,
+        "vy": 0.0,
+        "grounded": false,
+        "jumpSpeed": 6.0
+    }
+}
+
+pub fn stepCharacterController(ctrl, mov, dt, gravity, groundBoxes, jumpPressed) {
+    if dt == null || dt == undefined { dt = 0.016 }
+    if gravity == null || gravity == undefined { gravity = -20.0 }
+    if groundBoxes == null || groundBoxes == undefined { groundBoxes = [] }
+    if jumpPressed == true && ctrl["grounded"] == true {
+        ctrl["vy"] = ctrl["jumpSpeed"]
+        ctrl["grounded"] = false
+    }
+    let wishX = 0.0
+    let wishZ = 0.0
+    if mov != null && mov != undefined {
+        wishX = mov["wishX"] * mov["speed"]
+        wishZ = mov["wishZ"] * mov["speed"]
+    }
+    let stepped = characterStep(ctrl, wishX, wishZ, dt, gravity, groundBoxes)
+    stepped["kind"] = "CharacterController"
+    stepped["jumpSpeed"] = ctrl["jumpSpeed"]
+    return stepped
+}
+
+pub fn attachPlayerInput(world, id, actions) {
+    world = add(world, id, "PlayerInput", createPlayerInput(actions))
+    return world
+}
+
+/// One player tick: sample input -> Movement wish -> CharacterController -> Transform.
+pub fn stepPlayerEntity(world, id, dt, gravity, groundBoxes) {
+    if dt == null || dt == undefined { dt = 0.016 }
+    let input = get(world, id, "PlayerInput")
+    let mov = get(world, id, "Movement")
+    let ctrl = get(world, id, "CharacterController")
+    let transform = get(world, id, "Transform")
+    if mov == null || ctrl == null || transform == null {
+        return { "world": world, "ok": false }
+    }
+    let jump = false
+    let attack = false
+    if input != null && input != undefined {
+        input = samplePlayerInput(input)
+        mov = setMovementWish(mov, input["wishX"], input["wishZ"])
+        jump = input["jump"]
+        attack = input["attack"]
+        world = add(world, id, "PlayerInput", input)
+    }
+    ctrl = stepCharacterController(ctrl, mov, dt, gravity, groundBoxes, jump)
+    transform = syncTransformFromController(transform, ctrl)
+    world = add(world, id, "Movement", mov)
+    world = add(world, id, "CharacterController", ctrl)
+    world = add(world, id, "Transform", transform)
+    return { "world": world, "ok": true, "jump": jump, "attack": attack, "transform": transform }
+}

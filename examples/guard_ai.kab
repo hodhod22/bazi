@@ -1,0 +1,38 @@
+@version "1.0.0"
+
+// Guard brain: patrol -> chase -> flee based on distance / HP.
+import "bazi/ai/brain"
+
+let brain = createGuardBrain(
+    [{ "x": 0.0, "z": 0.0 }, { "x": 8.0, "z": 0.0 }, { "x": 8.0, "z": 8.0 }],
+    3.0,
+    5.0,
+    6.5,
+    7.0,
+    1.5,
+    0.3
+)
+
+let i = 0
+while i < 5 {
+    brain = stepGuardBrain(brain, null, 1.0, 0.1)
+    i = i + 1
+}
+println(guardBrainState(brain))
+println(brain["x"])
+
+let player = { "x": 3.0, "z": 0.5 }
+i = 0
+while i < 8 {
+    brain = stepGuardBrain(brain, player, 1.0, 0.1)
+    i = i + 1
+}
+println(guardBrainState(brain))
+println(brain["attacking"])
+
+i = 0
+while i < 5 {
+    brain = stepGuardBrain(brain, player, 0.2, 0.1)
+    i = i + 1
+}
+println(guardBrainState(brain))

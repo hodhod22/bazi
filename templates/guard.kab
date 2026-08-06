@@ -1,0 +1,40 @@
+@version "1.0.0"
+
+// Starter: attach a GuardBrain onto an ECS entity (copy into your game).
+import "game/ecs"
+import "bazi/core"
+import "bazi/ai/brain"
+
+pub fn spawnGuard(world, points, hp) {
+    if hp == null || hp == undefined { hp = 80.0 }
+    let id = spawn(world)
+    let x = points[0]["x"]
+    let z = points[0]["z"]
+    world = attachCoreBundle(world, id, x, 0.0, z, hp, 4.0)
+    let brain = createGuardBrain(points, 2.5, 5.0, 6.0, 8.0, 1.4, 0.25)
+    world = add(world, id, "GuardBrain", brain)
+    return { "world": world, "id": id }
+}
+
+pub fn stepGuardEntity(world, id, target, dt) {
+    let brain = get(world, id, "GuardBrain")
+    let health = get(world, id, "Health")
+    let transform = get(world, id, "Transform")
+    if brain == null || health == null || transform == null {
+        return { "world": world, "ok": false }
+    }
+    let hpFrac = 0.0
+    if health["max"] > 0.0 {
+        hpFrac = health["current"] / health["max"]
+    }
+    brain = stepGuardBrain(brain, target, hpFrac, dt)
+    transform = setTransformPos(transform, brain["x"], transform["y"], brain["z"])
+    world = add(world, id, "GuardBrain", brain)
+    world = add(world, id, "Transform", transform)
+    return {
+        "world": world,
+        "ok": true,
+        "attacking": brain["attacking"],
+        "state": guardBrainState(brain)
+    }
+}

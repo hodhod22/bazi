@@ -1,0 +1,11 @@
+@version "1.0.0"
+
+// Projectile helpers without ECS re-attach.
+import "bazi/extras/projectile"
+
+let p = createProjectileFromYaw(0.0, 1.0, 0.0, 0.0, 10.0, 12.0, "gun", 2.0)
+p = stepProjectile(p, 0.5)
+println(p["z"])
+println(projectileHits(p, 0.0, -5.0, 0.5))
+p = killProjectile(p)
+println(p["alive"])

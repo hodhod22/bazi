@@ -1,6 +1,7 @@
 @version "1.0.0"
 
-// Same as import "bazi" — nested path alias.
+// Same as import "bazi" - nested path alias.
 pub import "bazi/core"
+pub import "bazi/go"
 pub import "bazi/extras"
 pub import "bazi/ai"

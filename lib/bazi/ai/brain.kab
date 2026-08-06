@@ -1,0 +1,100 @@
+@version "1.0.0"
+
+// import "bazi/ai/brain"
+// Guard brain: patrol -> chase -> flee wired through a StateMachine.
+import "bazi/ai/patrol"
+import "bazi/ai/follow"
+import "bazi/ai/flee"
+import "bazi/ai/stateMachine"
+
+pub fn createGuardBrain(points, patrolSpeed, chaseSpeed, fleeSpeed, aggroDist, meleeDist, fleeHpFrac) {
+    if patrolSpeed == null || patrolSpeed == undefined { patrolSpeed = 3.0 }
+    if chaseSpeed == null || chaseSpeed == undefined { chaseSpeed = 5.0 }
+    if fleeSpeed == null || fleeSpeed == undefined { fleeSpeed = 6.0 }
+    if aggroDist == null || aggroDist == undefined { aggroDist = 8.0 }
+    if meleeDist == null || meleeDist == undefined { meleeDist = 1.4 }
+    if fleeHpFrac == null || fleeHpFrac == undefined { fleeHpFrac = 0.25 }
+    let x = points[0]["x"]
+    let z = points[0]["z"]
+    return {
+        "kind": "GuardBrain",
+        "sm": createStateMachine([
+            { "id": "patrol", "onEnter": "patrol", "onUpdate": "patrol" },
+            { "id": "chase", "onEnter": "chase", "onUpdate": "chase" },
+            { "id": "flee", "onEnter": "flee", "onUpdate": "flee" }
+        ], "patrol"),
+        "patrol": createPatrol(points, patrolSpeed),
+        "follow": createFollow(x, z, chaseSpeed, meleeDist),
+        "flee": createFlee(x, z, fleeSpeed, aggroDist),
+        "aggroDist": aggroDist,
+        "meleeDist": meleeDist,
+        "fleeHpFrac": fleeHpFrac,
+        "x": x,
+        "z": z,
+        "attacking": false
+    }
+}
+
+fn distSq(ax, az, bx, bz) {
+    let dx = ax - bx
+    let dz = az - bz
+    return dx * dx + dz * dz
+}
+
+/// Step guard AI. `target` = { x, z } or null. `hpFrac` = current/max (0..1).
+pub fn stepGuardBrain(brain, target, hpFrac, dt) {
+    if dt == null || dt == undefined { dt = 0.016 }
+    if hpFrac == null || hpFrac == undefined { hpFrac = 1.0 }
+    brain["sm"] = stepStateMachine(brain["sm"], dt)
+    brain["attacking"] = false
+
+    let hasTarget = target != null && target != undefined
+    let dist = 999999.0
+    if hasTarget {
+        dist = sqrt(distSq(brain["x"], brain["z"], target["x"], target["z"]))
+    }
+
+    let want = brain["sm"]["current"]
+    if hpFrac <= brain["fleeHpFrac"] && hasTarget {
+        want = "flee"
+    } else {
+        if hasTarget && dist <= brain["aggroDist"] {
+            want = "chase"
+        } else {
+            want = "patrol"
+        }
+    }
+    if want != brain["sm"]["current"] {
+        brain["sm"] = smTransition(brain["sm"], want)
+    }
+
+    if smIs(brain["sm"], "patrol") {
+        brain["patrol"]["x"] = brain["x"]
+        brain["patrol"]["z"] = brain["z"]
+        brain["patrol"] = stepPatrol(brain["patrol"], dt)
+        brain["x"] = brain["patrol"]["x"]
+        brain["z"] = brain["patrol"]["z"]
+    }
+    if smIs(brain["sm"], "chase") && hasTarget {
+        brain["follow"]["x"] = brain["x"]
+        brain["follow"]["z"] = brain["z"]
+        brain["follow"] = stepFollow(brain["follow"], target["x"], target["z"], dt)
+        brain["x"] = brain["follow"]["x"]
+        brain["z"] = brain["follow"]["z"]
+        if dist <= brain["meleeDist"] {
+            brain["attacking"] = true
+        }
+    }
+    if smIs(brain["sm"], "flee") && hasTarget {
+        brain["flee"]["x"] = brain["x"]
+        brain["flee"]["z"] = brain["z"]
+        brain["flee"] = stepFlee(brain["flee"], target["x"], target["z"], dt)
+        brain["x"] = brain["flee"]["x"]
+        brain["z"] = brain["flee"]["z"]
+    }
+    return brain
+}
+
+pub fn guardBrainState(brain) {
+    return brain["sm"]["current"]
+}

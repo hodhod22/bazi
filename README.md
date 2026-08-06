@@ -5,58 +5,115 @@
 | Lager | Repo | Import |
 |-------|------|--------|
 | Motor | `nova-interpreter` | `import "game/…"` (ECS, scene, render, physics, …) |
-| **Bazi** | detta repo | `import "bazi/…"` (Health, vehicle, AI, …) |
+| **Bazi** | detta repo | `import "bazi/…"` (GO/behaviours, Health, AI, …) |
 
-Som Unity packages: plocka bara de komponenter spelet behöver.
+## Ide: bättre än Unity-modellen
+
+ECS ligger **i botten** (snabb data). Ovanpå: `bazi/go` — GameObject + behaviours som **du** skriver; `tick` kör alla automatiskt.
+
+| Unity | Bazi |
+|-------|------|
+| GameObject + MonoBehaviour | `spawnGo` + `addBehaviour` / `addBehaviourFn` |
+| Update() magi / reflection | Tät `behaviours[]`-lista, O(n), ingen Find |
+| GetComponent varje frame | `goGet` / ECS `query` när du behöver |
+| Blandad data+logik | Data = komponenter, logik = behaviour |
+
+Importera bara det spelet behöver (Unity-package-stil).
 
 ## Setup
 
 ```bash
 export KABOOTAR_PATH="/absolute/path/to/bazi/lib"
-# Motor-lib måste också hittas (cwd i nova-interpreter, eller lägg till dess lib/)
+# Motor-lib: kör från nova-interpreter, eller lägg dess lib/ på path
 ```
 
-## Användning
+## GameObject + Behaviour
 
 ```kab
-import "game/ecs"
-import "bazi/core"                 # Transform, Health, Movement, …
-import "bazi/extras/vehicle"       # bara det du vill ha
+import "bazi/go"
+import "bazi/core/transform"
+
+class Spin {
+    deg: Number
+    fn init() { self.deg = 0.0 }
+    fn update(ctx) {
+        // Class methods: ctx["get"]/set/done (modul-imports syns inte i class).
+        let get = ctx["get"]
+        let set = ctx["set"]
+        let done = ctx["done"]
+        self.deg = self.deg + 90.0 * ctx["dt"]
+        let t = get(ctx, "Transform")
+        t["yaw"] = self.deg
+        ctx = set(ctx, "Transform", t)
+        return done(ctx, self)
+    }
+}
+
+let scene = createScene()
+let spawned = spawnGo(scene, "Spinner")
+scene = spawned["scene"]
+let id = spawned["id"]
+scene = addComp(scene, id, "Transform", createTransform(0.0, 0.0, 0.0))
+scene = addBehaviour(scene, id, Spin())
+scene = tick(scene, dt)   // kör alla behaviours
 ```
 
-Hela kitet (opt-in):
+Snabbaste vägen (ingen klass): `addBehaviourFn(scene, id, myUpdateFn)`.
+
+Med `onSpawn` (en gång): `addBehaviourSpawn(scene, id, Walker())`.  
+Prefab: `spawnCoreGo(scene, "Player", x, y, z, hp, speed)`.  
+Uppslag: `findGo(scene, "Player")`.
+
+### Core / combat (rå ECS)
 
 ```kab
-import "bazi"
+import "bazi/core"
+w = attachCoreBundle(w, id, 0.0, 1.0, 0.0, 100.0, 5.0)
+let hit = damageEntity(w, id, 25.0, null)
+w = hit["world"]
 ```
 
 ## Layout
 
 ```
 lib/
-  bazi.kab                 # aggregator: allt
+  bazi.kab                 # aggregator (tung — preferera leaf-imports)
   bazi/
-    core.kab               # essentials
-    extras/                # vehicle, inventory, rope, dialog, stealth, turret, puzzle
-    ai/                    # patrol, follow, flee, stateMachine
-    extras.kab / ai.kab    # aggregators
+    go.kab + go/           # Scene, GameObject, behaviours, tick
+    core.kab + core/       # Transform, Health, Movement, player, bundle
+    extras/                # vehicle, inventory, turret, projectile, …
+    ai/                    # patrol, follow, flee, stateMachine, brain
+templates/                 # behaviour.kab, guard.kab, …
 ```
 
 ## Skapa / ta bort komponenter
 
 ```bash
 ./tools/new-component.sh extras myDash
-# → lib/bazi/extras/myDash.kab + rad i extras.kab
-
 ./tools/remove-component.sh extras myDash
 ```
-
-I spelet räcker det ofta att **inte importera** en komponent. I din fork: radera filen med `remove-component.sh`.
 
 ## Exempel
 
 ```bash
-export KABOOTAR_PATH="$(pwd)/lib"
-# Kör från miljö där kabootar + nova-interpreter/lib finns
-kabootar run examples/minimal.kab
+cd ../nova-interpreter
+export KABOOTAR_PATH="$(pwd)/../bazi/lib"
+kabootar run ../bazi/examples/go_behaviours.kab
+kabootar run ../bazi/examples/go_player.kab
+kabootar run ../bazi/examples/minimal.kab
+kabootar run ../bazi/examples/combat_loop.kab
+kabootar run ../bazi/examples/guard_ai.kab
+kabootar run ../bazi/examples/inventory_ops.kab
+kabootar run ../bazi/examples/projectile_smoke.kab
 ```
+
+## Licens
+
+Bazi är **proprietär** — se [LICENSE](LICENSE). Nuvarande årsavgift (USD):
+
+| Användare | Pris / år |
+|-----------|-----------|
+| Privatperson (Individual) | **$10** |
+| Företag (Company) | **$100** |
+
+Priserna kan höjas för kommande perioder (med förvarning); redan betald period påverkas inte. Källkod synlig ≠ gratis att använda.

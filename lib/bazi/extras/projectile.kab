@@ -1,0 +1,66 @@
+@version "1.0.0"
+
+// import "bazi/extras/projectile"
+
+pub fn createProjectile(x, y, z, vx, vy, vz, damage, sourceId, lifetime) {
+    if y == null || y == undefined { y = 0.0 }
+    if vy == null || vy == undefined { vy = 0.0 }
+    if damage == null || damage == undefined { damage = 10.0 }
+    if sourceId == null || sourceId == undefined { sourceId = null }
+    if lifetime == null || lifetime == undefined { lifetime = 2.0 }
+    return {
+        "kind": "Projectile",
+        "x": x,
+        "y": y,
+        "z": z,
+        "vx": vx,
+        "vy": vy,
+        "vz": vz,
+        "damage": damage,
+        "sourceId": sourceId,
+        "lifetime": lifetime,
+        "alive": true,
+        "radius": 0.25
+    }
+}
+
+/// Spawn a horizontal shot from yaw (radians). Speed is m/s on XZ.
+pub fn createProjectileFromYaw(x, y, z, yaw, speed, damage, sourceId, lifetime) {
+    if speed == null || speed == undefined { speed = 20.0 }
+    let vx = sin(yaw) * speed
+    let vz = (0.0 - cos(yaw)) * speed
+    return createProjectile(x, y, z, vx, 0.0, vz, damage, sourceId, lifetime)
+}
+
+pub fn stepProjectile(p, dt) {
+    if dt == null || dt == undefined { dt = 0.016 }
+    if p["alive"] != true {
+        return p
+    }
+    p["lifetime"] = p["lifetime"] - dt
+    if p["lifetime"] <= 0.0 {
+        p["alive"] = false
+        return p
+    }
+    p["x"] = p["x"] + p["vx"] * dt
+    p["y"] = p["y"] + p["vy"] * dt
+    p["z"] = p["z"] + p["vz"] * dt
+    return p
+}
+
+/// Hits if projectile is alive and within radius of (tx,tz) on XZ (y ignored).
+pub fn projectileHits(p, tx, tz, targetRadius) {
+    if p["alive"] != true {
+        return false
+    }
+    if targetRadius == null || targetRadius == undefined { targetRadius = 0.5 }
+    let dx = p["x"] - tx
+    let dz = p["z"] - tz
+    let r = p["radius"] + targetRadius
+    return dx * dx + dz * dz <= r * r
+}
+
+pub fn killProjectile(p) {
+    p["alive"] = false
+    return p
+}

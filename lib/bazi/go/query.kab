@@ -1,0 +1,27 @@
+@version "1.0.0"
+
+// import "bazi/go/query"
+
+/// First alive GameObject with exact name, or null.
+pub fn findGo(scene, name) {
+    let names = scene["names"]
+    let alive = scene["alive"]
+    let entities = scene["world"]["entities"]
+    let i = 0
+    while i < len(entities) {
+        let id = entities[i]
+        if alive["" + id] == true && names["" + id] == name {
+            return id
+        }
+        i = i + 1
+    }
+    return null
+}
+
+pub fn goNameOf(scene, id) {
+    let n = scene["names"]["" + id]
+    if n == undefined {
+        return null
+    }
+    return n
+}

@@ -1,0 +1,15 @@
+@version "1.0.0"
+
+// import "bazi/go/prefab"
+import "bazi/go/scene"
+import "bazi/core/bundle"
+
+/// Spawn GO + core bundle (Transform, Health, Movement, CharacterController).
+pub fn spawnCoreGo(scene, name, x, y, z, hp, speed) {
+    let spawned = spawnGo(scene, name)
+    scene = spawned["scene"]
+    let id = spawned["id"]
+    let world = attachCoreBundle(scene["world"], id, x, y, z, hp, speed)
+    scene["world"] = world
+    return { "scene": scene, "id": id, "name": spawned["name"] }
+}

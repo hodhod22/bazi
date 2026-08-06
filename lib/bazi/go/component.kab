@@ -1,0 +1,23 @@
+@version "1.0.0"
+
+// import "bazi/go/component"
+import "game/ecs"
+
+pub fn addComp(scene, id, name, data) {
+    let world = scene["world"]
+    world = add(world, id, name, data)
+    scene["world"] = world
+    return scene
+}
+
+pub fn getComp(scene, id, name) {
+    return get(scene["world"], id, name)
+}
+
+pub fn hasComp(scene, id, name) {
+    return has(scene["world"], id, name)
+}
+
+pub fn queryComp(scene, name) {
+    return query(scene["world"], name)
+}

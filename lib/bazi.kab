@@ -1,6 +1,8 @@
 @version "1.0.0"
 
-// bazi — opt-in aggregator (core + extras + ai). import "bazi"
+// bazi - opt-in aggregator. Prefer leaf imports in games for faster compiles.
+// import "bazi"
 pub import "bazi/core"
+pub import "bazi/go"
 pub import "bazi/extras"
 pub import "bazi/ai"

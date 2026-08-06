@@ -1,6 +1,6 @@
 @version "1.0.0"
 
-// Minimal Bazi smoke — set KABOOTAR_PATH to this repo's lib/ and Kabootar lib/game on path.
+// Minimal Bazi smoke - set KABOOTAR_PATH to this repo's lib/ and run from nova-interpreter.
 import "game/ecs"
 import "bazi/core"
 import "bazi/extras/vehicle"
@@ -9,9 +9,8 @@ import "bazi/ai/patrol"
 let w = createWorld()
 let id = spawn(w)
 w = attachCoreBundle(w, id, 0.0, 1.0, 0.0, 100.0, 5.0)
-let hp = get(w, id, "Health")
-hp = applyDamageToHealth(hp, 25.0)
-w = add(w, id, "Health", hp)
+let hit = damageEntity(w, id, 25.0, null)
+w = hit["world"]
 
 let car = createVehicle(0.0, 0.0, 10.0, 2.0)
 car = setVehicleControls(car, 1.0, 0.0)
@@ -20,6 +19,6 @@ car = stepVehicle(car, 0.1)
 let patrol = createPatrol([{ "x": 0.0, "z": 0.0 }, { "x": 5.0, "z": 0.0 }], 3.0)
 patrol = stepPatrol(patrol, 0.5)
 
-print(hp["current"])
-print(car["z"])
-print(patrol["x"])
+println(hit["current"])
+println(car["z"])
+println(patrol["x"])

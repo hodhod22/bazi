@@ -2,10 +2,11 @@
 
 // import "bazi/extras/turret"
 
-pub fn createTurret(x, z, range, turnRate, fireCooldown) {
+pub fn createTurret(x, z, range, turnRate, fireCooldown, damage) {
     if range == null || range == undefined { range = 10.0 }
     if turnRate == null || turnRate == undefined { turnRate = 3.0 }
     if fireCooldown == null || fireCooldown == undefined { fireCooldown = 0.5 }
+    if damage == null || damage == undefined { damage = 10.0 }
     return {
         "kind": "Turret",
         "x": x,
@@ -15,6 +16,7 @@ pub fn createTurret(x, z, range, turnRate, fireCooldown) {
         "turnRate": turnRate,
         "cooldown": 0.0,
         "fireCooldown": fireCooldown,
+        "damage": damage,
         "targetX": null,
         "targetZ": null
     }
@@ -33,6 +35,7 @@ pub fn stepTurret(t, dt) {
         if t["cooldown"] < 0.0 { t["cooldown"] = 0.0 }
     }
     let fired = false
+    let shot = null
     if t["targetX"] != null && t["targetX"] != undefined {
         let dx = t["targetX"] - t["x"]
         let dz = t["targetZ"] - t["z"]
@@ -49,8 +52,16 @@ pub fn stepTurret(t, dt) {
             if diff < 0.05 && diff > 0.0 - 0.05 && t["cooldown"] <= 0.0 {
                 t["cooldown"] = t["fireCooldown"]
                 fired = true
+                shot = {
+                    "amount": t["damage"],
+                    "x": t["x"],
+                    "z": t["z"],
+                    "yaw": t["yaw"],
+                    "targetX": t["targetX"],
+                    "targetZ": t["targetZ"]
+                }
             }
         }
     }
-    return { "turret": t, "fired": fired }
+    return { "turret": t, "fired": fired, "shot": shot }
 }

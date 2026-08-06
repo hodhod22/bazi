@@ -1,0 +1,39 @@
+@version "1.0.0"
+
+// Starter: class behaviour + scene tick (copy into your game).
+import "bazi/go"
+import "bazi/core/transform"
+import "bazi/core/health"
+
+class PlayerBrain {
+    hpSync: Number
+    fn init() {
+        self.hpSync = 0.0
+    }
+    fn update(ctx) {
+        let get = ctx["get"]
+        let set = ctx["set"]
+        let done = ctx["done"]
+        let hp = get(ctx, "Health")
+        if hp != null {
+            self.hpSync = hp["current"]
+        }
+        let t = get(ctx, "Transform")
+        if t != null {
+            t["x"] = t["x"] + 1.0 * ctx["dt"]
+            ctx = set(ctx, "Transform", t)
+        }
+        return done(ctx, self)
+    }
+}
+
+pub fn bootPlayerScene() {
+    let scene = createScene()
+    let spawned = spawnGo(scene, "Player")
+    scene = spawned["scene"]
+    let id = spawned["id"]
+    scene = addComp(scene, id, "Transform", createTransform(0.0, 0.0, 0.0))
+    scene = addComp(scene, id, "Health", createHealth(100.0, 100.0))
+    scene = addBehaviour(scene, id, PlayerBrain())
+    return { "scene": scene, "id": id }
+}

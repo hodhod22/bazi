@@ -1,0 +1,31 @@
+@version "1.0.0"
+
+// import "bazi/core/transform"
+
+pub fn createTransform(x, y, z) {
+    if x == null || x == undefined { x = 0.0 }
+    if y == null || y == undefined { y = 0.0 }
+    if z == null || z == undefined { z = 0.0 }
+    return { "kind": "Transform", "x": x, "y": y, "z": z, "yaw": 0.0 }
+}
+
+pub fn setTransformPos(t, x, y, z) {
+    t["x"] = x
+    t["y"] = y
+    t["z"] = z
+    return t
+}
+
+pub fn syncTransformFromController(transform, ctrl) {
+    transform["x"] = ctrl["x"]
+    transform["y"] = ctrl["y"]
+    transform["z"] = ctrl["z"]
+    return transform
+}
+
+pub fn syncControllerFromTransform(ctrl, transform) {
+    ctrl["x"] = transform["x"]
+    ctrl["y"] = transform["y"]
+    ctrl["z"] = transform["z"]
+    return ctrl
+}

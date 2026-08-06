@@ -1,0 +1,52 @@
+@version "1.0.0"
+
+// spawnCoreGo + onSpawn lifecycle + findGo smoke.
+import "bazi/go"
+
+class Walker {
+    steps: Number
+    fn init() {
+        self.steps = 0.0
+    }
+    fn onSpawn(ctx) {
+        let get = ctx["get"]
+        let set = ctx["set"]
+        let done = ctx["done"]
+        let t = get(ctx, "Transform")
+        if t != null {
+            t["y"] = 1.0
+            ctx = set(ctx, "Transform", t)
+        }
+        self.steps = 0.0
+        return done(ctx, self)
+    }
+    fn update(ctx) {
+        let get = ctx["get"]
+        let set = ctx["set"]
+        let done = ctx["done"]
+        self.steps = self.steps + 1.0
+        let mov = get(ctx, "Movement")
+        let t = get(ctx, "Transform")
+        if mov != null && t != null {
+            t["x"] = t["x"] + mov["speed"] * ctx["dt"]
+            ctx = set(ctx, "Transform", t)
+        }
+        return done(ctx, self)
+    }
+}
+
+let scene = createScene()
+let spawned = spawnCoreGo(scene, "Player", 0.0, 0.0, 0.0, 100.0, 4.0)
+scene = spawned["scene"]
+let id = spawned["id"]
+scene = addBehaviourSpawn(scene, id, Walker())
+
+scene = tick(scene, 0.1)
+scene = tick(scene, 0.1)
+
+let found = findGo(scene, "Player")
+let t = getComp(scene, id, "Transform")
+println(found == id)
+println(t["y"])
+println(t["x"])
+println(goNameOf(scene, id))

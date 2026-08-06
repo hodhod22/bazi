@@ -2,7 +2,7 @@
 
 // import "bazi/ai/stateMachine"
 
-/// states: [{ "id", "onEnter"?, "onUpdate"? }] — callbacks optional (string tags).
+/// states: [{ "id", "onEnter"?, "onUpdate"? }] - callbacks optional (string tags).
 pub fn createStateMachine(states, startId) {
     if startId == null || startId == undefined {
         startId = states[0]["id"]
@@ -31,4 +31,30 @@ pub fn stepStateMachine(sm, dt) {
 
 pub fn smIs(sm, id) {
     return sm["current"] == id
+}
+
+/// Look up a string tag on the current state (e.g. "onEnter" / "onUpdate").
+pub fn smCurrentTag(sm, field) {
+    if field == null || field == undefined { field = "onUpdate" }
+    let states = sm["states"]
+    let i = 0
+    while i < len(states) {
+        if states[i]["id"] == sm["current"] {
+            let tag = states[i][field]
+            if tag == null || tag == undefined {
+                return null
+            }
+            return tag
+        }
+        i = i + 1
+    }
+    return null
+}
+
+/// True for one frame after a transition (elapsed just reset / still ~0).
+pub fn smJustEntered(sm, id) {
+    if sm["current"] != id {
+        return false
+    }
+    return sm["elapsed"] <= 0.0001
 }

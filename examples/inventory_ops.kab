@@ -1,0 +1,22 @@
+@version "1.0.0"
+
+import "bazi/extras/inventory"
+
+let inv = createInventory(8)
+let r = inventoryAdd(inv, createItem("potion", "Health Potion", 3, 10))
+inv = r["inventory"]
+r = inventoryAdd(inv, createItem("key", "Rusty Key", 1, 1))
+inv = r["inventory"]
+
+println(inventoryCount(inv, "potion"))
+println(inventoryHas(inv, "potion", 2))
+
+r = inventoryConsume(inv, "potion", 2)
+inv = r["inventory"]
+println(r["ok"])
+println(inventoryCount(inv, "potion"))
+
+r = inventoryRemove(inv, "key", 1)
+inv = r["inventory"]
+println(r["ok"])
+println(inventoryHas(inv, "key", 1))

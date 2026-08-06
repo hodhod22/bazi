@@ -1,0 +1,84 @@
+@version "1.0.0"
+
+// import "bazi/go/tick"
+import "bazi/go/ctx"
+
+fn makeCtx(world, id, dt, name, withApi) {
+    let ctx = {
+        "world": world,
+        "id": id,
+        "dt": dt,
+        "name": name,
+        "script": null
+    }
+    if withApi == true {
+        ctx["get"] = goGet
+        ctx["set"] = goSet
+        ctx["has"] = goHas
+        ctx["done"] = goDone
+    }
+    return ctx
+}
+
+fn runClass(ctx, script, phase) {
+    ctx["script"] = script
+    if phase == "spawn" {
+        ctx = script.onSpawn(ctx)
+    } else {
+        ctx = script.update(ctx)
+    }
+    return ctx
+}
+
+/// Dense O(n) pass. Behaviours list detached during calls (avoids CoW cycles).
+pub fn tick(scene, dt) {
+    if dt == null || dt == undefined { dt = 0.016 }
+    let behaviours = scene["behaviours"]
+    let alive = scene["alive"]
+    let names = scene["names"]
+    let world = scene["world"]
+    scene["behaviours"] = []
+    let i = 0
+    let n = len(behaviours)
+    while i < n {
+        let b = behaviours[i]
+        if b["enabled"] == true && alive["" + b["id"]] == true {
+            let name = names["" + b["id"]]
+            if name == undefined || name == null { name = "" }
+            if b["fn"] == true {
+                let ctx = makeCtx(world, b["id"], dt, name, false)
+                let f = b["script"]
+                ctx = f(ctx)
+                world = ctx["world"]
+            } else {
+                let ctx = makeCtx(world, b["id"], dt, name, true)
+                let script = b["script"]
+                if b["callSpawn"] == true && b["started"] != true {
+                    ctx = runClass(ctx, script, "spawn")
+                    if ctx["script"] != null && ctx["script"] != undefined {
+                        script = ctx["script"]
+                    }
+                    b["started"] = true
+                }
+                ctx = runClass(ctx, script, "update")
+                if ctx["script"] != null && ctx["script"] != undefined {
+                    b["script"] = ctx["script"]
+                } else {
+                    b["script"] = script
+                }
+                world = ctx["world"]
+            }
+            behaviours[i] = b
+        }
+        i = i + 1
+    }
+    scene["world"] = world
+    scene["alive"] = alive
+    scene["names"] = names
+    scene["behaviours"] = behaviours
+    return scene
+}
+
+pub fn tickFixed(scene, dt) {
+    return tick(scene, dt)
+}

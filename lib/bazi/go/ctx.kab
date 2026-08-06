@@ -1,0 +1,55 @@
+@version "1.0.0"
+
+// import "bazi/go/ctx"
+// ctx carries world (not full scene) to avoid CoW cycles with behaviour lists.
+
+pub fn goId(ctx) {
+    return ctx["id"]
+}
+
+pub fn goDt(ctx) {
+    return ctx["dt"]
+}
+
+pub fn goName(ctx) {
+    return ctx["name"]
+}
+
+pub fn goGet(ctx, compName) {
+    let world = ctx["world"]
+    let bag = world["comps"][compName]
+    if bag == undefined || bag == null {
+        return null
+    }
+    let v = bag["" + ctx["id"]]
+    if v == undefined {
+        return null
+    }
+    return v
+}
+
+pub fn goHas(ctx, compName) {
+    return goGet(ctx, compName) != null
+}
+
+pub fn goSet(ctx, compName, data) {
+    let world = ctx["world"]
+    let comps = world["comps"]
+    if comps == undefined || comps == null {
+        comps = {}
+    }
+    let bag = comps[compName]
+    if bag == undefined || bag == null {
+        bag = {}
+    }
+    bag["" + ctx["id"]] = data
+    comps[compName] = bag
+    world["comps"] = comps
+    ctx["world"] = world
+    return ctx
+}
+
+pub fn goDone(ctx, script) {
+    ctx["script"] = script
+    return ctx
+}

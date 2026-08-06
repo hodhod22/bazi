@@ -1,0 +1,128 @@
+BAZI COMMERCIAL LICENSE
+Version 1.0 — 2026-08-06
+
+Copyright (c) 2026 Bazi contributors / rights holder ("Licensor").
+All rights reserved.
+
+This software and associated documentation files (the "Software") are proprietary.
+Viewing the source does not grant a license to use, copy, modify, distribute, or
+commercialize the Software. A paid subscription license is required.
+
+
+1. DEFINITIONS
+
+  "Individual" means a natural person using the Software for personal projects,
+  learning, hobby games, or freelance work billed in their own name (not as an
+  employee or contractor of a company that embeds the Software in a product).
+
+  "Company" means any legal entity (corporation, LLC, partnership, association,
+  school, studio, or similar), and any natural person using the Software in the
+  course of employment for such an entity, or shipping a commercial product under
+  a company brand.
+
+  "License Term" means one (1) year from the date payment is received (or from
+  renewal), unless otherwise stated on the purchase receipt.
+
+  "Licensed Material" means the Bazi Software, including source, binaries,
+  examples, templates, and documentation distributed in this repository.
+
+
+2. GRANT OF LICENSE
+
+  Subject to timely payment and compliance with this License, Licensor grants you
+  a non-exclusive, non-transferable, non-sublicensable, worldwide license during
+  the License Term to use, modify, and incorporate the Licensed Material into your
+  own games and applications ("Your Projects"), and to distribute Your Projects
+  (including the Licensed Material as incorporated) to end users.
+
+  You may not redistribute the Licensed Material as a standalone library,
+  competing framework, or "Bazi-compatible" package, whether free or paid.
+
+
+3. FEES (CURRENT)
+
+  Current subscription fees (USD, per License Term):
+
+    • Individual …………… USD $10 per year
+    • Company ……………… USD $100 per year
+
+  One Company license covers employees and contractors of that Company while
+  working on that Company's projects. An Individual license covers one natural
+  person only.
+
+  Payment method, invoicing, and activation are as published by Licensor
+  (website, invoice, or written agreement).
+
+
+4. FUTURE PRICE CHANGES
+
+  Licensor may increase fees for future License Terms after a period of years
+  (or earlier if announced). Price increases apply to renewals and new purchases
+  after the effective date stated in the notice; they do not retroactively change
+  a License Term already paid for.
+
+  Licensor will announce new prices with at least thirty (30) days' notice before
+  they apply to renewals. If you do not renew at the new price, your license ends
+  at the end of the then-current License Term.
+
+
+5. RENEWAL AND EXPIRY
+
+  Access and rights under this License continue only while the License Term is
+  active and fees are paid. Upon expiry or non-renewal you must stop using the
+  Licensed Material in new development. Builds of Your Projects already shipped
+  to end users may continue to run; you may not update them with newer Licensed
+  Material without a valid license.
+
+
+6. RESTRICTIONS
+
+  Except as expressly allowed above, you may not:
+
+    (a) sublicense, rent, or sell the Licensed Material alone;
+    (b) remove copyright or license notices;
+    (c) use Licensor's trademarks to imply endorsement without permission;
+    (d) share license credentials or use one Individual license across a Company.
+
+
+7. OWNERSHIP
+
+  Licensor retains all title, copyright, and other intellectual property rights
+  in the Licensed Material. This License does not sell the Software.
+
+
+8. NO WARRANTY
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO MERCHANTABILITY, FITNESS FOR A PARTICULAR
+  PURPOSE, AND NONINFRINGEMENT.
+
+
+9. LIMITATION OF LIABILITY
+
+  TO THE MAXIMUM EXTENT PERMITTED BY LAW, LICENSOR SHALL NOT BE LIABLE FOR ANY
+  INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR ANY LOSS
+  OF PROFITS OR DATA, ARISING FROM USE OF THE SOFTWARE. LICENSOR'S TOTAL LIABILITY
+  SHALL NOT EXCEED THE FEES YOU PAID FOR THE THEN-CURRENT LICENSE TERM.
+
+
+10. TERMINATION
+
+  This License terminates automatically if you breach it or fail to pay. Upon
+  termination, the grant in Section 2 ends. Sections 7–9 survive termination.
+
+
+11. GOVERNING LAW
+
+  Unless a separate written agreement says otherwise, this License is governed by
+  the laws of the jurisdiction designated by Licensor in the purchase terms or,
+  if none, the Licensor's principal place of business.
+
+
+12. CONTACT
+
+  For purchases, invoices, and license questions, contact the Licensor through
+  the channels published in the project README or official website.
+
+
+END OF LICENSE

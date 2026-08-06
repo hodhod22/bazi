@@ -1,0 +1,21 @@
+@version "1.0.0"
+
+// import "bazi/core/bundle"
+import "game/ecs"
+pub import "bazi/core/transform"
+pub import "bazi/core/health"
+pub import "bazi/core/movement"
+pub import "bazi/core/player"
+
+pub fn attachCoreBundle(world, id, x, y, z, hp, speed) {
+    if x == null || x == undefined { x = 0.0 }
+    if y == null || y == undefined { y = 0.0 }
+    if z == null || z == undefined { z = 0.0 }
+    if hp == null || hp == undefined { hp = 100.0 }
+    if speed == null || speed == undefined { speed = 5.0 }
+    world = add(world, id, "Transform", createTransform(x, y, z))
+    world = add(world, id, "Health", createHealth(hp, hp))
+    world = add(world, id, "Movement", createMovement(speed))
+    world = add(world, id, "CharacterController", createCharacterController(x, y, z, 0.4, 1.8))
+    return world
+}

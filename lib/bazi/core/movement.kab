@@ -1,0 +1,33 @@
+@version "1.0.0"
+
+// import "bazi/core/movement"
+
+pub fn createMovement(speed) {
+    if speed == null || speed == undefined { speed = 5.0 }
+    return {
+        "kind": "Movement",
+        "speed": speed,
+        "vx": 0.0,
+        "vy": 0.0,
+        "vz": 0.0,
+        "wishX": 0.0,
+        "wishZ": 0.0
+    }
+}
+
+pub fn setMovementWish(mov, wishX, wishZ) {
+    mov["wishX"] = wishX
+    mov["wishZ"] = wishZ
+    return mov
+}
+
+pub fn stepMovement(mov, transform, dt) {
+    if dt == null || dt == undefined { dt = 0.016 }
+    let sp = mov["speed"]
+    mov["vx"] = mov["wishX"] * sp
+    mov["vz"] = mov["wishZ"] * sp
+    transform["x"] = transform["x"] + mov["vx"] * dt
+    transform["z"] = transform["z"] + mov["vz"] * dt
+    transform["y"] = transform["y"] + mov["vy"] * dt
+    return { "movement": mov, "transform": transform }
+}

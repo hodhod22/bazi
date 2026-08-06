@@ -1,0 +1,53 @@
+@version "1.0.0"
+
+// import "bazi/go/behaviour"
+// Dense behaviour list - tick is O(n), not a full ECS scan.
+
+/// Class with fn update(ctx). No onSpawn.
+pub fn addBehaviour(scene, id, script) {
+    let behaviours = scene["behaviours"]
+    behaviours = push(behaviours, {
+        "id": id,
+        "script": script,
+        "enabled": true,
+        "fn": false,
+        "callSpawn": false,
+        "started": true
+    })
+    scene["behaviours"] = behaviours
+    return scene
+}
+
+/// Class with fn onSpawn(ctx) then fn update(ctx) each tick.
+pub fn addBehaviourSpawn(scene, id, script) {
+    let behaviours = scene["behaviours"]
+    behaviours = push(behaviours, {
+        "id": id,
+        "script": script,
+        "enabled": true,
+        "fn": false,
+        "callSpawn": true,
+        "started": false
+    })
+    scene["behaviours"] = behaviours
+    return scene
+}
+
+/// Plain fn(ctx) -> ctx (fastest path).
+pub fn addBehaviourFn(scene, id, updateFn) {
+    let behaviours = scene["behaviours"]
+    behaviours = push(behaviours, {
+        "id": id,
+        "script": updateFn,
+        "enabled": true,
+        "fn": true,
+        "callSpawn": false,
+        "started": true
+    })
+    scene["behaviours"] = behaviours
+    return scene
+}
+
+pub fn behaviourCount(scene) {
+    return len(scene["behaviours"])
+}

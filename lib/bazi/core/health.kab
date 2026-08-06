@@ -1,0 +1,57 @@
+@version "1.0.0"
+
+// import "bazi/core/health"
+import "game/ecs"
+
+pub fn createHealth(current, maxHp) {
+    if current == null || current == undefined { current = 100.0 }
+    if maxHp == null || maxHp == undefined { maxHp = current }
+    return { "kind": "Health", "current": current, "max": maxHp, "alive": current > 0.0 }
+}
+
+pub fn applyDamageToHealth(health, amount) {
+    if amount == null || amount == undefined { amount = 0.0 }
+    if amount < 0.0 { amount = 0.0 - amount }
+    health["current"] = health["current"] - amount
+    if health["current"] < 0.0 {
+        health["current"] = 0.0
+    }
+    health["alive"] = health["current"] > 0.0
+    return health
+}
+
+pub fn healHealth(health, amount) {
+    if amount == null || amount == undefined { amount = 0.0 }
+    health["current"] = health["current"] + amount
+    if health["current"] > health["max"] {
+        health["current"] = health["max"]
+    }
+    health["alive"] = health["current"] > 0.0
+    return health
+}
+
+pub fn createDamage(amount, sourceId) {
+    if amount == null || amount == undefined { amount = 10.0 }
+    if sourceId == null || sourceId == undefined { sourceId = null }
+    return { "kind": "Damage", "amount": amount, "sourceId": sourceId, "type": "raw" }
+}
+
+pub fn damageEntity(world, id, amount, sourceId) {
+    let health = get(world, id, "Health")
+    if health == null || health == undefined {
+        return { "world": world, "ok": false, "alive": false }
+    }
+    health = applyDamageToHealth(health, amount)
+    world = add(world, id, "Health", health)
+    return { "world": world, "ok": true, "alive": health["alive"], "current": health["current"], "sourceId": sourceId }
+}
+
+pub fn healEntity(world, id, amount) {
+    let health = get(world, id, "Health")
+    if health == null || health == undefined {
+        return { "world": world, "ok": false }
+    }
+    health = healHealth(health, amount)
+    world = add(world, id, "Health", health)
+    return { "world": world, "ok": true, "alive": health["alive"], "current": health["current"] }
+}

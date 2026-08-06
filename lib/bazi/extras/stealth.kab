@@ -51,3 +51,17 @@ pub fn stealthHear(agent, noise) {
     }
     return { "agent": agent, "heard": false }
 }
+
+/// Decay alert toward 0. rate ~= alert units per second.
+pub fn stepStealthAlert(agent, dt, rate) {
+    if dt == null || dt == undefined { dt = 0.016 }
+    if rate == null || rate == undefined { rate = 0.15 }
+    agent["alert"] = agent["alert"] - rate * dt
+    if agent["alert"] < 0.0 { agent["alert"] = 0.0 }
+    return agent
+}
+
+pub fn stealthIsAlerted(agent, threshold) {
+    if threshold == null || threshold == undefined { threshold = 0.6 }
+    return agent["alert"] >= threshold
+}

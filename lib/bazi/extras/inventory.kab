@@ -51,3 +51,38 @@ pub fn inventoryCount(inv, itemId) {
     }
     return n
 }
+
+pub fn inventoryHas(inv, itemId, amount) {
+    if amount == null || amount == undefined { amount = 1 }
+    return inventoryCount(inv, itemId) >= amount
+}
+
+/// Remove up to `amount` of itemId. Returns leftover still needed (0 = ok).
+pub fn inventoryRemove(inv, itemId, amount) {
+    if amount == null || amount == undefined { amount = 1 }
+    let need = amount
+    let slots = inv["slots"]
+    let next = []
+    let i = 0
+    while i < len(slots) {
+        let s = slots[i]
+        if s["id"] == itemId && need > 0 {
+            if s["stack"] > need {
+                s["stack"] = s["stack"] - need
+                need = 0
+                next = push(next, s)
+            } else {
+                need = need - s["stack"]
+            }
+        } else {
+            next = push(next, s)
+        }
+        i = i + 1
+    }
+    inv["slots"] = next
+    return { "inventory": inv, "ok": need <= 0, "missing": need }
+}
+
+pub fn inventoryConsume(inv, itemId, amount) {
+    return inventoryRemove(inv, itemId, amount)
+}

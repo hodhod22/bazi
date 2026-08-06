@@ -1,0 +1,11 @@
+@version "1.0.0"
+
+// bazi/go - GameObject + Behaviour layer over ECS.
+// import "bazi/go"
+pub import "bazi/go/scene"
+pub import "bazi/go/component"
+pub import "bazi/go/behaviour"
+pub import "bazi/go/ctx"
+pub import "bazi/go/tick"
+pub import "bazi/go/query"
+pub import "bazi/go/prefab"
