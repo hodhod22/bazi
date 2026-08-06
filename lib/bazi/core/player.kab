@@ -51,41 +51,27 @@ pub fn samplePlayerInput(input) {
 }
 
 pub fn createCharacterController(x, y, z, radius, height) {
-    if x == null || x == undefined { x = 0.0 }
-    if y == null || y == undefined { y = 0.0 }
-    if z == null || z == undefined { z = 0.0 }
-    if radius == null || radius == undefined { radius = 0.4 }
-    if height == null || height == undefined { height = 1.8 }
-    return {
-        "kind": "CharacterController",
-        "x": x,
-        "y": y,
-        "z": z,
-        "radius": radius,
-        "height": height,
-        "vy": 0.0,
-        "grounded": false,
-        "jumpSpeed": 6.0
-    }
+    // Motor physics character + gameplay kind tag for ECS queries.
+    let ctrl = createPhysicsCharacter(x, y, z, radius, height)
+    ctrl["kind"] = "CharacterController"
+    return ctrl
 }
 
 pub fn stepCharacterController(ctrl, mov, dt, gravity, groundBoxes, jumpPressed) {
     if dt == null || dt == undefined { dt = 0.016 }
     if gravity == null || gravity == undefined { gravity = -20.0 }
     if groundBoxes == null || groundBoxes == undefined { groundBoxes = [] }
-    if jumpPressed == true && ctrl["grounded"] == true {
-        ctrl["vy"] = ctrl["jumpSpeed"]
-        ctrl["grounded"] = false
-    }
     let wishX = 0.0
     let wishZ = 0.0
+    let speed = 0.0
     if mov != null && mov != undefined {
-        wishX = mov["wishX"] * mov["speed"]
-        wishZ = mov["wishZ"] * mov["speed"]
+        wishX = mov["wishX"]
+        wishZ = mov["wishZ"]
+        speed = mov["speed"]
     }
-    let stepped = characterStep(ctrl, wishX, wishZ, dt, gravity, groundBoxes)
+    // Prefer motor characterDrive (wish dirs * speed + jump + gravity).
+    let stepped = characterDrive(ctrl, wishX, wishZ, speed, dt, gravity, groundBoxes, jumpPressed)
     stepped["kind"] = "CharacterController"
-    stepped["jumpSpeed"] = ctrl["jumpSpeed"]
     return stepped
 }
 
@@ -114,7 +100,8 @@ pub fn stepPlayerEntity(world, id, dt, gravity, groundBoxes) {
         world = add(world, id, "PlayerInput", input)
     }
     ctrl = stepCharacterController(ctrl, mov, dt, gravity, groundBoxes, jump)
-    transform = syncTransformFromController(transform, ctrl)
+    // Motor sync helper (game/physics) keeps Transform aligned with CC.
+    transform = syncTransformFromCharacter(transform, ctrl)
     world = add(world, id, "Movement", mov)
     world = add(world, id, "CharacterController", ctrl)
     world = add(world, id, "Transform", transform)
