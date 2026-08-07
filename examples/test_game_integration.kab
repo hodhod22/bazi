@@ -1,0 +1,93 @@
+@version "1.0.0"
+
+// Test integration of new game systems with bazi
+import "bazi/go/scene"
+import "bazi/go/component"
+import "bazi/go/behaviour"
+import "bazi/go/tick"
+import "game/camera"
+import "game/collider"
+import "game/layer"
+import "game/tag"
+import "game/time"
+import "game/event"
+
+// Test camera system
+let cam = createPerspectiveCamera(60.0, 0.1, 1000.0)
+cam = setCameraPosition(cam, 0.0, 5.0, -10.0)
+cam = cameraLookAt(cam, 0.0, 0.0, 0.0)
+println(cam["fov"] == 60.0)
+println(cam["x"] == 0.0)
+println(cam["y"] == 5.0)
+println(cam["z"] == -10.0)
+
+// Test collider system
+let boxCol = createBoxCollider(0.0, 0.0, 0.0, 2.0, 2.0, 2.0)
+boxCol = setColliderTrigger(boxCol, true)
+boxCol = setColliderLayer(boxCol, 6)
+println(boxCol["type"] == "box")
+println(boxCol["isTrigger"] == true)
+println(boxCol["layer"] == 6)
+
+let sphereCol = createSphereCollider(1.0, 1.0, 1.0, 0.5)
+println(sphereCol["type"] == "sphere")
+println(sphereCol["radius"] == 0.5)
+
+// Test layer system
+let mask = layerToMask(6)
+println(mask == 64)
+println(maskContainsLayer(mask, 6) == true)
+println(maskContainsLayer(mask, 7) == false)
+
+let playerMask = maskFromNames(["Player", "Enemy"], createDefaultLayerNames())
+println(maskContainsLayer(playerMask, 6) == true)
+
+// Test tag system
+let tagManager = createTagManager()
+tagManager = addTag(tagManager, "1", "Player")
+tagManager = addTag(tagManager, "1", "Hero")
+println(hasTag(tagManager, "1", "Player") == true)
+println(hasTag(tagManager, "1", "Enemy") == false)
+println(len(getTags(tagManager, "1")) == 2)
+
+let players = findWithTag(tagManager, "Player")
+println(len(players) == 1)
+
+// Test time system
+let timeManager = createTimeManager()
+timeManager = setTimeScale(timeManager, 0.5)
+timeManager = updateTime(timeManager, 0.016)
+println(getTimeScale(timeManager) == 0.5)
+println(getDeltaTime(timeManager) == 0.008)
+println(isPaused(timeManager) == false)
+
+timeManager = pause(timeManager)
+println(isPaused(timeManager) == true)
+
+timeManager = resume(timeManager)
+println(isPaused(timeManager) == false)
+
+// Test event system
+let eventManager = createEventManager()
+let globalCalled = false
+eventManager = onGlobal(eventManager, "onTest", fn(data) {
+    globalCalled = true
+})
+emitGlobal(eventManager, "onTest", null)
+println(globalCalled == true)
+
+// Test integration with bazi scene
+let scene = createScene()
+let ps = spawnGo(scene, "Player")
+scene = ps["scene"]
+let playerId = ps["id"]
+
+// Add new game components
+scene = addComp(scene, playerId, "Camera", cam)
+scene = addComp(scene, playerId, "Collider", boxCol)
+
+// Test tick with new systems
+scene = tick(scene, 0.016)
+println(behaviourCount(scene) == 0)
+
+println("All game system integration tests passed!")

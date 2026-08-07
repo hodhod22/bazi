@@ -1,0 +1,23 @@
+@version "1.0.0"
+
+// Simple test of new game systems
+import "game/camera"
+import "game/layer"
+import "game/tag"
+
+println("Testing camera system...")
+let cam = createPerspectiveCamera(60.0, 0.1, 1000.0)
+println("Camera created: " + cam["kind"])
+println("FOV: " + cam["fov"])
+
+println("Testing layer system...")
+let mask = layerToMask(6)
+println("Player layer mask: " + mask)
+println("Contains player: " + maskContainsLayer(mask, 6))
+
+println("Testing tag system...")
+let tagMgr = createTagManager()
+tagMgr = addTag(tagMgr, "1", "Player")
+println("Has Player tag: " + hasTag(tagMgr, "1", "Player"))
+
+println("All tests completed!")
