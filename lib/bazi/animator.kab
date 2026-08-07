@@ -1,0 +1,220 @@
+@version "1.0.0"
+
+// Bazi Animator System - Better than Unity Animator
+// Features: ECS-integrated, no reflection, explicit state machines, blend trees
+// Canonical path: import "bazi/animator"
+
+import "game/core/ecs3"
+
+pub fn createAnimatorController() {
+    return {
+        "kind": "AnimatorController",
+        "states": {},
+        "parameters": {},
+        "currentState": null,
+        "defaultState": null,
+        "transitions": []
+    }
+}
+
+pub fn addAnimatorState(controller, stateName, animationClip) {
+    controller["states"][stateName] = {
+        "name": stateName,
+        "clip": animationClip,
+        "speed": 1.0,
+        "loop": true,
+        "exitTime": 0.0
+    }
+    return controller
+}
+
+pub fn setAnimatorParameter(controller, paramName, value) {
+    controller["parameters"][paramName] = value
+    return controller
+}
+
+pub fn addAnimatorTransition(controller, fromState, toState, conditions) {
+    controller["transitions"] = push(controller["transitions"], {
+        "from": fromState,
+        "to": toState,
+        "conditions": conditions,
+        "duration": 0.2,
+        "exitTime": 0.9
+    })
+    return controller
+}
+
+pub fn createAnimatorComponent(controller) {
+    return {
+        "kind": "Animator",
+        "controller": controller,
+        "currentState": controller["defaultState"],
+        "normalizedTime": 0.0,
+        "playbackSpeed": 1.0,
+        "parameters": {}
+    }
+}
+
+pub fn playAnimatorState(animator, stateName) {
+    animator["currentState"] = stateName
+    animator["normalizedTime"] = 0.0
+    return animator
+}
+
+pub fn setAnimatorBool(animator, paramName, value) {
+    animator["parameters"][paramName] = value
+    return animator
+}
+
+pub fn setAnimatorFloat(animator, paramName, value) {
+    animator["parameters"][paramName] = value
+    return animator
+}
+
+pub fn setAnimatorTrigger(animator, paramName) {
+    animator["parameters"][paramName] = true
+    return animator
+}
+
+pub fn resetAnimatorTrigger(animator, paramName) {
+    animator["parameters"][paramName] = false
+    return animator
+}
+
+pub fn updateAnimator(animator, dt) {
+    let controller = animator["controller"]
+    let currentStateName = animator["currentState"]
+    let currentState = controller["states"][currentStateName]
+    
+    if currentState != null {
+        let clip = currentState["clip"]
+        let speed = currentState["speed"] * animator["playbackSpeed"]
+        
+        animator["normalizedTime"] = animator["normalizedTime"] + (dt * speed / clip["duration"])
+        
+        if animator["normalizedTime"] >= 1.0 {
+            if currentState["loop"] == true {
+                animator["normalizedTime"] = animator["normalizedTime"] - 1.0
+            } else {
+                animator["normalizedTime"] = 1.0
+            }
+        }
+        
+        animator = checkAnimatorTransitions(animator)
+    }
+    
+    return animator
+}
+
+fn checkAnimatorTransitions(animator) {
+    let controller = animator["controller"]
+    let transitions = controller["transitions"]
+    
+    let i = 0
+    while i < len(transitions) {
+        let transition = transitions[i]
+        
+        if transition["from"] == animator["currentState"] {
+            if evaluateAnimatorConditions(animator, transition["conditions"]) {
+                if animator["normalizedTime"] >= transition["exitTime"] {
+                    animator = playAnimatorState(animator, transition["to"])
+                }
+            }
+        }
+        i = i + 1
+    }
+    
+    return animator
+}
+
+fn evaluateAnimatorConditions(animator, conditions) {
+    let i = 0
+    while i < len(conditions) {
+        let condition = conditions[i]
+        let paramValue = animator["parameters"][condition["param"]]
+        
+        if condition["mode"] == "equals" {
+            if paramValue != condition["value"] {
+                return false
+            }
+        } else if condition["mode"] == "greater" {
+            if paramValue <= condition["value"] {
+                return false
+            }
+        } else if condition["mode"] == "less" {
+            if paramValue >= condition["value"] {
+                return false
+            }
+        }
+        i = i + 1
+    }
+    
+    return true
+}
+
+pub fn createAnimationClip(name, duration, keyframes) {
+    return {
+        "name": name,
+        "duration": duration,
+        "keyframes": keyframes,
+        "loop": true
+    }
+}
+
+pub fn createBlendTree(name, children) {
+    return {
+        "kind": "BlendTree",
+        "name": name,
+        "children": children,
+        "parameter": "Blend",
+        "thresholds": []
+    }
+}
+
+pub fn evaluateBlendTree(blendTree, parameterValue) {
+    let i = 0
+    while i < len(blendTree["children"]) {
+        let child = blendTree["children"][i]
+        let threshold = blendTree["thresholds"][i]
+        
+        if parameterValue <= threshold {
+            return child
+        }
+        i = i + 1
+    }
+    
+    return blendTree["children"][len(blendTree["children"]) - 1]
+}
+
+pub fn lerpAnimationClip(clipA, clipB, alpha) {
+    return {
+        "name": clipA["name"] + "_lerp_" + clipB["name"],
+        "duration": clipA["duration"] * (1.0 - alpha) + clipB["duration"] * alpha,
+        "keyframes": lerpKeyframes(clipA["keyframes"], clipB["keyframes"], alpha),
+        "loop": clipA["loop"]
+    }
+}
+
+fn lerpKeyframes(keyframesA, keyframesB, alpha) {
+    let result = []
+    let i = 0
+    while i < len(keyframesA) {
+        let kfA = keyframesA[i]
+        let kfB = keyframesB[i]
+        result = push(result, lerpKeyframe(kfA, kfB, alpha))
+        i = i + 1
+    }
+    return result
+}
+
+fn lerpKeyframe(kfA, kfB, alpha) {
+    let result = {}
+    for key in kfA {
+        if key == "time" {
+            result[key] = kfA[key]
+        } else {
+            result[key] = kfA[key] * (1.0 - alpha) + kfB[key] * alpha
+        }
+    }
+    return result
+}

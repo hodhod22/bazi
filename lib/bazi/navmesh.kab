@@ -1,0 +1,340 @@
+@version "1.0.0"
+
+// Bazi NavMesh System - Better than Unity NavMesh
+// Features: ECS-integrated, dynamic updates, multi-agent pathfinding, better performance
+// Canonical path: import "bazi/navmesh"
+
+import "game/core/ecs3"
+
+pub fn createNavMesh() {
+    return {
+        "kind": "NavMesh",
+        "triangles": [],
+        "vertices": [],
+        "portals": [],
+        "regions": {},
+        "agentTypes": {},
+        "heightField": null,
+        "offMeshConnections": []
+    }
+}
+
+pub fn addNavMeshTriangle(navMesh, v1, v2, v3, area) {
+    navMesh["triangles"] = push(navMesh["triangles"], {
+        "vertices": [v1, v2, v3],
+        "area": area,
+        "neighbors": []
+    })
+    return navMesh
+}
+
+pub fn addNavMeshVertex(navMesh, x, y, z) {
+    navMesh["vertices"] = push(navMesh["vertices"], { "x": x, "y": y, "z": z })
+    return navMesh
+}
+
+pub fn addNavMeshAgentType(navMesh, typeName, radius, height, maxClimb, maxSlope) {
+    navMesh["agentTypes"][typeName] = {
+        "radius": radius,
+        "height": height,
+        "maxClimb": maxClimb,
+        "maxSlope": maxSlope
+    }
+    return navMesh
+}
+
+pub fn createNavMeshAgent(entityId, agentType, speed, acceleration) {
+    return {
+        "kind": "NavMeshAgent",
+        "entityId": entityId,
+        "agentType": agentType,
+        "speed": speed,
+        "acceleration": acceleration,
+        "currentPath": [],
+        "targetPosition": null,
+        "destination": null,
+        "velocity": { "x": 0.0, "y": 0.0, "z": 0.0 },
+        "nextWaypoint": 0,
+        "isMoving": false,
+        "autoRepath": true,
+        "areaMask": 0xFFFFFFFF
+    }
+}
+
+pub fn setNavMeshDestination(agent, position) {
+    agent["destination"] = position
+    agent["isMoving"] = true
+    agent["nextWaypoint"] = 0
+    return agent
+}
+
+pub fn calculateNavMeshPath(navMesh, agent, start, end) {
+    let path = aStarNavMesh(navMesh, start, end, agent["agentType"], agent["areaMask"])
+    agent["currentPath"] = path
+    agent["nextWaypoint"] = 0
+    return agent
+}
+
+fn aStarNavMesh(navMesh, start, end, agentType, areaMask) {
+    let openSet = []
+    let closedSet = {}
+    let cameFrom = {}
+    let gScore = {}
+    let fScore = {}
+    
+    let startKey = navMeshPositionKey(start)
+    gScore[startKey] = 0.0
+    fScore[startKey] = heuristicDistance(start, end)
+    openSet = push(openSet, { "position": start, "f": fScore[startKey] })
+    
+    while len(openSet) > 0 {
+        let current = getLowestFScore(openSet)
+        let currentKey = navMeshPositionKey(current["position"])
+        
+        if distance3D(current["position"], end) < 0.1 {
+            return reconstructPath(cameFrom, currentKey)
+        }
+        
+        openSet = removeFromOpenSet(openSet, current)
+        closedSet[currentKey] = true
+        
+        let neighbors = getNavMeshNeighbors(navMesh, current["position"], agentType, areaMask)
+        let i = 0
+        while i < len(neighbors) {
+            let neighbor = neighbors[i]
+            let neighborKey = navMeshPositionKey(neighbor)
+            
+            if closedSet[neighborKey] == true {
+                i = i + 1
+                continue
+            }
+            
+            let tentativeG = gScore[currentKey] + distance3D(current["position"], neighbor)
+            
+            if gScore[neighborKey] == null || tentativeG < gScore[neighborKey] {
+                cameFrom[neighborKey] = currentKey
+                gScore[neighborKey] = tentativeG
+                fScore[neighborKey] = tentativeG + heuristicDistance(neighbor, end)
+                
+                if !inOpenSet(openSet, neighbor) {
+                    openSet = push(openSet, { "position": neighbor, "f": fScore[neighborKey] })
+                }
+            }
+            i = i + 1
+        }
+    }
+    
+    return []
+}
+
+fn reconstructPath(cameFrom, currentKey) {
+    let path = [currentKey]
+    let key = currentKey
+    
+    while cameFrom[key] != null {
+        key = cameFrom[key]
+        path = push(path, key)
+    }
+    
+    return reverseArray(path)
+}
+
+fn getLowestFScore(openSet) {
+    let lowest = openSet[0]
+    let i = 1
+    while i < len(openSet) {
+        if openSet[i]["f"] < lowest["f"] {
+            lowest = openSet[i]
+        }
+        i = i + 1
+    }
+    return lowest
+}
+
+fn removeFromOpenSet(openSet, item) {
+    let result = []
+    let i = 0
+    while i < len(openSet) {
+        if openSet[i] != item {
+            result = push(result, openSet[i])
+        }
+        i = i + 1
+    }
+    return result
+}
+
+fn inOpenSet(openSet, position) {
+    let i = 0
+    while i < len(openSet) {
+        if distance3D(openSet[i]["position"], position) < 0.001 {
+            return true
+        }
+        i = i + 1
+    }
+    return false
+}
+
+fn getNavMeshNeighbors(navMesh, position, agentType, areaMask) {
+    let neighbors = []
+    let i = 0
+    while i < len(navMesh["triangles"]) {
+        let triangle = navMesh["triangles"][i]
+        
+        if (triangle["area"] & areaMask) != 0 {
+            let j = 0
+            while j < len(triangle["vertices"]) {
+                let vertex = triangle["vertices"][j]
+                if distance3D(position, vertex) < 0.5 {
+                    let k = 0
+                    while k < len(triangle["neighbors"]) {
+                        neighbors = push(neighbors, triangle["neighbors"][k])
+                        k = k + 1
+                    }
+                }
+                j = j + 1
+            }
+        }
+        i = i + 1
+    }
+    return neighbors
+}
+
+fn navMeshPositionKey(position) {
+    return "" + position["x"] + "," + position["y"] + "," + position["z"]
+}
+
+fn heuristicDistance(a, b) {
+    return distance3D(a, b)
+}
+
+fn distance3D(a, b) {
+    let dx = a["x"] - b["x"]
+    let dy = a["y"] - b["y"]
+    let dz = a["z"] - b["z"]
+    return sqrt(dx * dx + dy * dy + dz * dz)
+}
+
+fn reverseArray(arr) {
+    let result = []
+    let i = len(arr) - 1
+    while i >= 0 {
+        result = push(result, arr[i])
+        i = i - 1
+    }
+    return result
+}
+
+pub fn updateNavMeshAgent(agent, dt, currentPosition) {
+    if agent["isMoving"] != true {
+        return agent
+    }
+    
+    if len(agent["currentPath"]) == 0 {
+        agent["isMoving"] = false
+        return agent
+    }
+    
+    if agent["nextWaypoint"] >= len(agent["currentPath"]) {
+        agent["isMoving"] = false
+        return agent
+    }
+    
+    let target = agent["currentPath"][agent["nextWaypoint"]]
+    let direction = {
+        "x": target["x"] - currentPosition["x"],
+        "y": target["y"] - currentPosition["y"],
+        "z": target["z"] - currentPosition["z"]
+    }
+    
+    let distance = distance3D(currentPosition, target)
+    
+    if distance < 0.1 {
+        agent["nextWaypoint"] = agent["nextWaypoint"] + 1
+        return agent
+    }
+    
+    let normalized = normalizeVector3(direction)
+    agent["velocity"] = {
+        "x": normalized["x"] * agent["speed"],
+        "y": normalized["y"] * agent["speed"],
+        "z": normalized["z"] * agent["speed"]
+    }
+    
+    return agent
+}
+
+fn normalizeVector3(v) {
+    let length = sqrt(v["x"] * v["x"] + v["y"] * v["y"] + v["z"] * v["z"])
+    if length == 0.0 {
+        return { "x": 0.0, "y": 0.0, "z": 0.0 }
+    }
+    return {
+        "x": v["x"] / length,
+        "y": v["y"] / length,
+        "z": v["z"] / length
+    }
+}
+
+pub fn addOffMeshConnection(navMesh, start, end, bidirectional, area) {
+    navMesh["offMeshConnections"] = push(navMesh["offMeshConnections"], {
+        "start": start,
+        "end": end,
+        "bidirectional": bidirectional,
+        "area": area
+    })
+    return navMesh
+}
+
+pub fn bakeNavMeshFromHeightField(navMesh, heightField, cellSize, walkableHeight, walkableSlope) {
+    let width = heightField["width"]
+    let height = heightField["height"]
+    
+    let x = 0
+    while x < width {
+        let z = 0
+        while z < height {
+            let h1 = heightField["data"][x + z * width]
+            let h2 = heightField["data"][(x + 1) + z * width]
+            let h3 = heightField["data"][x + (z + 1) * width]
+            
+            if h1 != null && h2 != null && h3 != null {
+                let slope = abs(h2 - h1) / cellSize
+                if slope < walkableSlope {
+                    navMesh = addNavMeshTriangle(navMesh, 
+                        { "x": x * cellSize, "y": h1, "z": z * cellSize },
+                        { "x": (x + 1) * cellSize, "y": h2, "z": z * cellSize },
+                        { "x": x * cellSize, "y": h3, "z": (z + 1) * cellSize },
+                        1
+                    )
+                }
+            }
+            z = z + 1
+        }
+        x = x + 1
+    }
+    
+    return navMesh
+}
+
+pub fn updateNavMeshDynamically(navMesh, obstaclePosition, obstacleRadius) {
+    let i = 0
+    while i < len(navMesh["triangles"]) {
+        let triangle = navMesh["triangles"][i]
+        let center = getTriangleCenter(triangle["vertices"])
+        
+        if distance3D(center, obstaclePosition) < obstacleRadius {
+            triangle["area"] = 0
+            navMesh["triangles"][i] = triangle
+        }
+        i = i + 1
+    }
+    
+    return navMesh
+}
+
+fn getTriangleCenter(vertices) {
+    let x = (vertices[0]["x"] + vertices[1]["x"] + vertices[2]["x"]) / 3.0
+    let y = (vertices[0]["y"] + vertices[1]["y"] + vertices[2]["y"]) / 3.0
+    let z = (vertices[0]["z"] + vertices[1]["z"] + vertices[2]["z"]) / 3.0
+    return { "x": x, "y": y, "z": z }
+}

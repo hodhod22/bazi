@@ -1,0 +1,316 @@
+@version "1.0.0"
+
+// Bazi UI System - Better than Unity UI
+// Features: ECS-integrated, simple API, layout systems, better performance
+// Canonical path: import "bazi/ui"
+
+import "game/core/ecs3"
+
+pub fn createCanvas(width, height) {
+    return {
+        "kind": "UICanvas",
+        "width": width,
+        "height": height,
+        "elements": [],
+        "layout": "vertical",
+        "spacing": 10.0,
+        "padding": { "left": 0.0, "right": 0.0, "top": 0.0, "bottom": 0.0 }
+    }
+}
+
+pub fn createUIElement(kind, x, y, width, height) {
+    return {
+        "kind": kind,
+        "x": x,
+        "y": y,
+        "width": width,
+        "height": height,
+        "anchor": "top-left",
+        "pivot": { "x": 0.0, "y": 0.0 },
+        "color": { "r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0 },
+        "text": "",
+        "fontSize": 16.0,
+        "font": "default",
+        "image": null,
+        "onClick": null,
+        "onHover": null,
+        "children": [],
+        "parent": null,
+        "visible": true,
+        "interactable": true
+    }
+}
+
+pub fn addUIToCanvas(canvas, element) {
+    canvas["elements"] = push(canvas["elements"], element)
+    return canvas
+}
+
+pub fn setUIPosition(element, x, y) {
+    element["x"] = x
+    element["y"] = y
+    return element
+}
+
+pub fn setUISize(element, width, height) {
+    element["width"] = width
+    element["height"] = height
+    return element
+}
+
+pub fn setUIColor(element, r, g, b, a) {
+    element["color"] = { "r": r, "g": g, "b": b, "a": a }
+    return element
+}
+
+pub fn setUIText(element, text) {
+    element["text"] = text
+    return element
+}
+
+pub fn setUIImage(element, image) {
+    element["image"] = image
+    return element
+}
+
+pub fn setUIOnClick(element, callback) {
+    element["onClick"] = callback
+    return element
+}
+
+pub fn setUIOnHover(element, callback) {
+    element["onHover"] = callback
+    return element
+}
+
+pub fn addUIChild(parent, child) {
+    child["parent"] = parent
+    parent["children"] = push(parent["children"], child)
+    return parent
+}
+
+pub fn removeUIChild(parent, child) {
+    let newChildren = []
+    let i = 0
+    while i < len(parent["children"]) {
+        if parent["children"][i] != child {
+            newChildren = push(newChildren, parent["children"][i])
+        }
+        i = i + 1
+    }
+    parent["children"] = newChildren
+    child["parent"] = null
+    return parent
+}
+
+pub fn setUIVisible(element, visible) {
+    element["visible"] = visible
+    return element
+}
+
+pub fn setUIInteractable(element, interactable) {
+    element["interactable"] = interactable
+    return element
+}
+
+pub fn updateUILayout(canvas) {
+    let layout = canvas["layout"]
+    let spacing = canvas["spacing"]
+    let padding = canvas["padding"]
+    
+    if layout == "vertical" {
+        let currentY = padding["top"]
+        let i = 0
+        while i < len(canvas["elements"]) {
+            let element = canvas["elements"][i]
+            element["x"] = padding["left"]
+            element["y"] = currentY
+            currentY = currentY + element["height"] + spacing
+            canvas["elements"][i] = element
+            i = i + 1
+        }
+    } else if layout == "horizontal" {
+        let currentX = padding["left"]
+        let i = 0
+        while i < len(canvas["elements"]) {
+            let element = canvas["elements"][i]
+            element["x"] = currentX
+            element["y"] = padding["top"]
+            currentX = currentX + element["width"] + spacing
+            canvas["elements"][i] = element
+            i = i + 1
+        }
+    } else if layout == "grid" {
+        let columns = 3
+        let currentX = padding["left"]
+        let currentY = padding["top"]
+        let col = 0
+        let i = 0
+        while i < len(canvas["elements"]) {
+            let element = canvas["elements"][i]
+            element["x"] = currentX
+            element["y"] = currentY
+            col = col + 1
+            if col >= columns {
+                col = 0
+                currentX = padding["left"]
+                currentY = currentY + element["height"] + spacing
+            } else {
+                currentX = currentX + element["width"] + spacing
+            }
+            canvas["elements"][i] = element
+            i = i + 1
+        }
+    }
+    
+    return canvas
+}
+
+pub fn hitTestUI(canvas, x, y) {
+    let i = len(canvas["elements"]) - 1
+    while i >= 0 {
+        let element = canvas["elements"][i]
+        if element["visible"] == true && element["interactable"] == true {
+            if x >= element["x"] && x <= element["x"] + element["width"] &&
+               y >= element["y"] && y <= element["y"] + element["height"] {
+                return element
+            }
+        }
+        i = i - 1
+    }
+    return null
+}
+
+pub fn processUIClick(canvas, x, y) {
+    let element = hitTestUI(canvas, x, y)
+    if element != null && element["onClick"] != null {
+        element["onClick"](element)
+    }
+    return canvas
+}
+
+pub fn processUIHover(canvas, x, y) {
+    let element = hitTestUI(canvas, x, y)
+    if element != null && element["onHover"] != null {
+        element["onHover"](element)
+    }
+    return canvas
+}
+
+pub fn createButton(x, y, width, height, text, onClick) {
+    let button = createUIElement("Button", x, y, width, height)
+    button["text"] = text
+    button["onClick"] = onClick
+    return button
+}
+
+pub fn createLabel(x, y, width, height, text) {
+    let label = createUIElement("Label", x, y, width, height)
+    label["text"] = text
+    label["interactable"] = false
+    return label
+}
+
+pub fn createImage(x, y, width, height, image) {
+    let imageElement = createUIElement("Image", x, y, width, height)
+    imageElement["image"] = image
+    imageElement["interactable"] = false
+    return imageElement
+}
+
+pub fn createInputField(x, y, width, height, placeholder) {
+    let input = createUIElement("InputField", x, y, width, height)
+    input["text"] = ""
+    input["placeholder"] = placeholder
+    return input
+}
+
+pub fn createSlider(x, y, width, height, min, max, value) {
+    let slider = createUIElement("Slider", x, y, width, height)
+    slider["min"] = min
+    slider["max"] = max
+    slider["value"] = value
+    return slider
+}
+
+pub fn createToggle(x, y, width, height, isOn) {
+    let toggle = createUIElement("Toggle", x, y, width, height)
+    toggle["isOn"] = isOn
+    return toggle
+}
+
+pub fn createDropdown(x, y, width, height, options) {
+    let dropdown = createUIElement("Dropdown", x, y, width, height)
+    dropdown["options"] = options
+    dropdown["selectedIndex"] = 0
+    dropdown["isExpanded"] = false
+    return dropdown
+}
+
+pub fn createScrollView(x, y, width, height) {
+    let scrollView = createUIElement("ScrollView", x, y, width, height)
+    scrollView["content"] = []
+    scrollView["scrollPosition"] = { "x": 0.0, "y": 0.0 }
+    return scrollView
+}
+
+pub fn addToScrollView(scrollView, element) {
+    scrollView["content"] = push(scrollView["content"], element)
+    return scrollView
+}
+
+pub fn setScrollPosition(scrollView, x, y) {
+    scrollView["scrollPosition"] = { "x": x, "y": y }
+    return scrollView
+}
+
+pub fn createPanel(x, y, width, height) {
+    let panel = createUIElement("Panel", x, y, width, height)
+    panel["interactable"] = false
+    return panel
+}
+
+pub fn createProgressBar(x, y, width, height, value) {
+    let progressBar = createUIElement("ProgressBar", x, y, width, height)
+    progressBar["value"] = value
+    progressBar["interactable"] = false
+    return progressBar
+}
+
+pub fn setProgressBarValue(progressBar, value) {
+    progressBar["value"] = value
+    return progressBar
+}
+
+pub fn createLayoutGroup(layout, spacing, padding) {
+    return {
+        "kind": "LayoutGroup",
+        "layout": layout,
+        "spacing": spacing,
+        "padding": padding
+    }
+}
+
+pub fn applyLayoutGroup(canvas, layoutGroup) {
+    canvas["layout"] = layoutGroup["layout"]
+    canvas["spacing"] = layoutGroup["spacing"]
+    canvas["padding"] = layoutGroup["padding"]
+    return updateUILayout(canvas)
+}
+
+pub fn getUIElementById(canvas, id) {
+    let i = 0
+    while i < len(canvas["elements"]) {
+        let element = canvas["elements"][i]
+        if element["id"] == id {
+            return element
+        }
+        i = i + 1
+    }
+    return null
+}
+
+pub fn setUIElementId(element, id) {
+    element["id"] = id
+    return element
+}

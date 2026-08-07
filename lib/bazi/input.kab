@@ -1,0 +1,437 @@
+@version "1.0.0"
+
+// Bazi Input System - Better than Unity Input System
+// Features: ECS-integrated, action-based, better performance, flexible mapping
+// Canonical path: import "bazi/input"
+
+import "game/core/ecs3"
+
+pub fn createInputManager() {
+    return {
+        "kind": "InputManager",
+        "actions": {},
+        "bindings": {},
+        "devices": {},
+        "currentDevice": "keyboard",
+        "deadzone": 0.1,
+        "sensitivity": 1.0,
+        "doubleTapTime": 0.3,
+        "holdTime": 0.5
+    }
+}
+
+pub fn createInputAction(name, actionType) {
+    return {
+        "kind": "InputAction",
+        "name": name,
+        "type": actionType,
+        "value": 0.0,
+        "phase": "waiting",
+        "startTime": 0.0,
+        "tapCount": 0,
+        "lastTapTime": 0.0,
+        "isHeld": false,
+        "holdStartTime": 0.0
+    }
+}
+
+pub fn addInputAction(manager, action) {
+    manager["actions"][action["name"]] = action
+    return manager
+}
+
+pub fn addInputBinding(manager, actionName, binding) {
+    if manager["bindings"][actionName] == null {
+        manager["bindings"][actionName] = []
+    }
+    manager["bindings"][actionName] = push(manager["bindings"][actionName], binding)
+    return manager
+}
+
+pub fn createKeyBinding(keyCode) {
+    return {
+        "kind": "KeyBinding",
+        "keyCode": keyCode,
+        "modifiers": []
+    }
+}
+
+pub fn createMouseButtonBinding(button) {
+    return {
+        "kind": "MouseButtonBinding",
+        "button": button,
+        "modifiers": []
+    }
+}
+
+pub fn createAxisBinding(positiveKey, negativeKey) {
+    return {
+        "kind": "AxisBinding",
+        "positiveKey": positiveKey,
+        "negativeKey": negativeKey,
+        "deadzone": 0.1
+    }
+}
+
+pub fn createGamepadBinding(button, axis) {
+    return {
+        "kind": "GamepadBinding",
+        "button": button,
+        "axis": axis,
+        "deadzone": 0.1
+    }
+}
+
+pub fn updateInputManager(manager, dt, keyboardState, mouseState, gamepadState) {
+    for actionName in manager["actions"] {
+        let action = manager["actions"][actionName]
+        let bindings = manager["bindings"][actionName]
+        
+        if bindings != null {
+            let value = 0.0
+            let pressed = false
+            let released = false
+            
+            let i = 0
+            while i < len(bindings) {
+                let binding = bindings[i]
+                let result = evaluateBinding(binding, keyboardState, mouseState, gamepadState)
+                
+                value = value + result["value"]
+                pressed = pressed || result["pressed"]
+                released = released || result["released"]
+                i = i + 1
+            }
+            
+            action["value"] = value
+            
+            if pressed == true {
+                if action["phase"] == "waiting" || action["phase"] == "canceled" {
+                    action["phase"] = "started"
+                    action["startTime"] = 0.0
+                    action["tapCount"] = action["tapCount"] + 1
+                    action["lastTapTime"] = 0.0
+                } else if action["phase"] == "started" {
+                    action["phase"] = "performed"
+                }
+                
+                if action["isHeld"] != true {
+                    action["isHeld"] = true
+                    action["holdStartTime"] = 0.0
+                }
+            } else if released == true {
+                if action["phase"] == "performed" {
+                    action["phase"] = "canceled"
+                }
+                action["isHeld"] = false
+            } else {
+                if action["phase"] == "performed" {
+                    action["phase"] = "waiting"
+                }
+            }
+            
+            action["startTime"] = action["startTime"] + dt
+            action["lastTapTime"] = action["lastTapTime"] + dt
+            
+            if action["lastTapTime"] > manager["doubleTapTime"] {
+                action["tapCount"] = 0
+            }
+            
+            if action["isHeld"] == true {
+                action["holdStartTime"] = action["holdStartTime"] + dt
+            }
+            
+            manager["actions"][actionName] = action
+        }
+    }
+    
+    return manager
+}
+
+fn evaluateBinding(binding, keyboardState, mouseState, gamepadState) {
+    let value = 0.0
+    let pressed = false
+    let released = false
+    
+    if binding["kind"] == "KeyBinding" {
+        let isDown = keyboardState[binding["keyCode"]]
+        if isDown == true {
+            value = 1.0
+            pressed = true
+        } else {
+            released = true
+        }
+    } else if binding["kind"] == "MouseButtonBinding" {
+        let isDown = mouseState[binding["button"]]
+        if isDown == true {
+            value = 1.0
+            pressed = true
+        } else {
+            released = true
+        }
+    } else if binding["kind"] == "AxisBinding" {
+        let positiveDown = keyboardState[binding["positiveKey"]]
+        let negativeDown = keyboardState[binding["negativeKey"]]
+        
+        if positiveDown == true {
+            value = 1.0
+            pressed = true
+        }
+        
+        if negativeDown == true {
+            value = value - 1.0
+            pressed = true
+        }
+        
+        if abs(value) < binding["deadzone"] {
+            value = 0.0
+        }
+    } else if binding["kind"] == "GamepadBinding" {
+        if binding["button"] != null {
+            let isDown = gamepadState["buttons"][binding["button"]]
+            if isDown == true {
+                value = 1.0
+                pressed = true
+            } else {
+                released = true
+            }
+        }
+        
+        if binding["axis"] != null {
+            let axisValue = gamepadState["axes"][binding["axis"]]
+            if abs(axisValue) > binding["deadzone"] {
+                value = axisValue
+                pressed = true
+            }
+        }
+    }
+    
+    return { "value": value, "pressed": pressed, "released": released }
+}
+
+pub fn getActionValue(manager, actionName) {
+    let action = manager["actions"][actionName]
+    if action == null {
+        return 0.0
+    }
+    return action["value"]
+}
+
+pub fn isActionPressed(manager, actionName) {
+    let action = manager["actions"][actionName]
+    if action == null {
+        return false
+    }
+    return action["phase"] == "started" || action["phase"] == "performed"
+}
+
+pub fn isActionReleased(manager, actionName) {
+    let action = manager["actions"][actionName]
+    if action == null {
+        return false
+    }
+    return action["phase"] == "canceled"
+}
+
+pub fn wasActionPerformed(manager, actionName) {
+    let action = manager["actions"][actionName]
+    if action == null {
+        return false
+    }
+    return action["phase"] == "performed"
+}
+
+pub fn getActionPhase(manager, actionName) {
+    let action = manager["actions"][actionName]
+    if action == null {
+        return "waiting"
+    }
+    return action["phase"]
+}
+
+pub fn isActionHeld(manager, actionName) {
+    let action = manager["actions"][actionName]
+    if action == null {
+        return false
+    }
+    return action["isHeld"]
+}
+
+pub fn getActionHoldTime(manager, actionName) {
+    let action = manager["actions"][actionName]
+    if action == null {
+        return 0.0
+    }
+    return action["holdStartTime"]
+}
+
+pub fn getActionTapCount(manager, actionName) {
+    let action = manager["actions"][actionName]
+    if action == null {
+        return 0
+    }
+    return action["tapCount"]
+}
+
+pub fn wasActionDoubleTapped(manager, actionName) {
+    let action = manager["actions"][actionName]
+    if action == null {
+        return false
+    }
+    return action["tapCount"] >= 2
+}
+
+pub fn enableAction(manager, actionName) {
+    if manager["actions"][actionName] != null {
+        manager["actions"][actionName]["enabled"] = true
+    }
+    return manager
+}
+
+pub fn disableAction(manager, actionName) {
+    if manager["actions"][actionName] != null {
+        manager["actions"][actionName]["enabled"] = false
+    }
+    return manager
+}
+
+pub fn setActionDeadzone(manager, actionName, deadzone) {
+    let bindings = manager["bindings"][actionName]
+    if bindings != null {
+        let i = 0
+        while i < len(bindings) {
+            if bindings[i]["deadzone"] != null {
+                bindings[i]["deadzone"] = deadzone
+            }
+            i = i + 1
+        }
+    }
+    return manager
+}
+
+pub fn setInputDeadzone(manager, deadzone) {
+    manager["deadzone"] = deadzone
+    return manager
+}
+
+pub fn setInputSensitivity(manager, sensitivity) {
+    manager["sensitivity"] = sensitivity
+    return manager
+}
+
+pub fn setDoubleTapTime(manager, time) {
+    manager["doubleTapTime"] = time
+    return manager
+}
+
+pub fn setHoldTime(manager, time) {
+    manager["holdTime"] = time
+    return manager
+}
+
+pub fn createInputActionMap(name) {
+    return {
+        "kind": "InputActionMap",
+        "name": name,
+        "actions": {}
+    }
+}
+
+pub fn addInputActionToMap(actionMap, action) {
+    actionMap["actions"][action["name"]] = action
+    return actionMap
+}
+
+pub fn enableInputActionMap(manager, actionMap) {
+    for actionName in actionMap["actions"] {
+        let action = actionMap["actions"][actionName]
+        manager = addInputAction(manager, action)
+    }
+    return manager
+}
+
+pub fn createInputComposite(name, mode, bindings) {
+    return {
+        "kind": "InputComposite",
+        "name": name,
+        "mode": mode,
+        "bindings": bindings
+    }
+}
+
+pub fn create2DAxisComposite(up, down, left, right) {
+    return createInputComposite("2DAxis", "2D", [
+        createKeyBinding(up),
+        createKeyBinding(down),
+        createKeyBinding(left),
+        createKeyBinding(right)
+    ])
+}
+
+pub fn create1DAxisComposite(negative, positive) {
+    return createInputComposite("1DAxis", "1D", [
+        createKeyBinding(negative),
+        createKeyBinding(positive)
+    ])
+}
+
+pub fn getVector2(manager, actionName) {
+    let action = manager["actions"][actionName]
+    if action == null {
+        return { "x": 0.0, "y": 0.0 }
+    }
+    
+    if action["type"] == "Vector2" {
+        return action["value"]
+    }
+    
+    return { "x": 0.0, "y": 0.0 }
+}
+
+pub fn getVector3(manager, actionName) {
+    let action = manager["actions"][actionName]
+    if action == null {
+        return { "x": 0.0, "y": 0.0, "z": 0.0 }
+    }
+    
+    if action["type"] == "Vector3" {
+        return action["value"]
+    }
+    
+    return { "x": 0.0, "y": 0.0, "z": 0.0 }
+}
+
+pub fn resetInputActions(manager) {
+    for actionName in manager["actions"] {
+        let action = manager["actions"][actionName]
+        action["phase"] = "waiting"
+        action["value"] = 0.0
+        action["tapCount"] = 0
+        action["isHeld"] = false
+        manager["actions"][actionName] = action
+    }
+    return manager
+}
+
+pub fn getCurrentInputDevice(manager) {
+    return manager["currentDevice"]
+}
+
+pub fn setCurrentInputDevice(manager, device) {
+    manager["currentDevice"] = device
+    return manager
+}
+
+pub fn isGamepadConnected(manager) {
+    return manager["devices"]["gamepad"] != null
+}
+
+pub fn getGamepadCount(manager) {
+    let count = 0
+    for device in manager["devices"] {
+        if device["kind"] == "Gamepad" {
+            count = count + 1
+        }
+    }
+    return count
+}

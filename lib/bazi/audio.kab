@@ -1,0 +1,383 @@
+@version "1.0.0"
+
+// Bazi Audio System - Better than Unity Audio
+// Features: ECS-integrated, 3D spatial audio, better performance, flexible mixing
+// Canonical path: import "bazi/audio"
+
+import "game/core/ecs3"
+
+pub fn createAudioManager() {
+    return {
+        "kind": "AudioManager",
+        "listeners": [],
+        "sources": [],
+        "mixers": {},
+        "masterVolume": 1.0,
+        "dopplerFactor": 1.0,
+        "rolloffFactor": 1.0,
+        "distanceModel": "inverse"
+    }
+}
+
+pub fn createAudioListener(entityId, position) {
+    return {
+        "kind": "AudioListener",
+        "entityId": entityId,
+        "position": position,
+        "velocity": { "x": 0.0, "y": 0.0, "z": 0.0 },
+        "forward": { "x": 0.0, "y": 0.0, "z": 1.0 },
+        "up": { "x": 0.0, "y": 1.0, "z": 0.0 }
+    }
+}
+
+pub fn createAudioSource(entityId, clip) {
+    return {
+        "kind": "AudioSource",
+        "entityId": entityId,
+        "clip": clip,
+        "position": { "x": 0.0, "y": 0.0, "z": 0.0 },
+        "velocity": { "x": 0.0, "y": 0.0, "z": 0.0 },
+        "volume": 1.0,
+        "pitch": 1.0,
+        "loop": false,
+        "spatialBlend": 0.0,
+        "minDistance": 1.0,
+        "maxDistance": 500.0,
+        "rolloffMode": "logarithmic",
+        "isPlaying": false,
+        "isPaused": false,
+        "time": 0.0,
+        "priority": 128,
+        "mute": false,
+        "bypassEffects": false,
+        "bypassListenerEffects": false,
+        "bypassReverbZones": false
+    }
+}
+
+pub fn createAudioClip(name, data, channels, sampleRate, length) {
+    return {
+        "kind": "AudioClip",
+        "name": name,
+        "data": data,
+        "channels": channels,
+        "sampleRate": sampleRate,
+        "length": length,
+        "loadType": "decompress",
+        "compressionFormat": "pcm"
+    }
+}
+
+pub fn addAudioListener(manager, listener) {
+    manager["listeners"] = push(manager["listeners"], listener)
+    return manager
+}
+
+pub fn addAudioSource(manager, source) {
+    manager["sources"] = push(manager["sources"], source)
+    return manager
+}
+
+pub fn playAudioSource(source) {
+    source["isPlaying"] = true
+    source["isPaused"] = false
+    source["time"] = 0.0
+    return source
+}
+
+pub fn stopAudioSource(source) {
+    source["isPlaying"] = false
+    source["isPaused"] = false
+    source["time"] = 0.0
+    return source
+}
+
+pub fn pauseAudioSource(source) {
+    source["isPlaying"] = false
+    source["isPaused"] = true
+    return source
+}
+
+pub fn resumeAudioSource(source) {
+    source["isPlaying"] = true
+    source["isPaused"] = false
+    return source
+}
+
+pub fn setAudioSourceVolume(source, volume) {
+    source["volume"] = volume
+    return source
+}
+
+pub fn setAudioSourcePitch(source, pitch) {
+    source["pitch"] = pitch
+    return source
+}
+
+pub fn setAudioSourceLoop(source, loop) {
+    source["loop"] = loop
+    return source
+}
+
+pub fn setAudioSourceSpatialBlend(source, blend) {
+    source["spatialBlend"] = blend
+    return source
+}
+
+pub fn setAudioSourcePosition(source, x, y, z) {
+    source["position"] = { "x": x, "y": y, "z": z }
+    return source
+}
+
+pub fn setAudioSourceVelocity(source, x, y, z) {
+    source["velocity"] = { "x": x, "y": y, "z": z }
+    return source
+}
+
+pub fn setAudioSourceMute(source, mute) {
+    source["mute"] = mute
+    return source
+}
+
+pub fn setAudioSourcePriority(source, priority) {
+    source["priority"] = priority
+    return source
+}
+
+pub fn updateAudioManager(manager, dt) {
+    let i = 0
+    while i < len(manager["sources"]) {
+        let source = manager["sources"][i]
+        
+        if source["isPlaying"] == true && source["isPaused"] == false {
+            source["time"] = source["time"] + dt * source["pitch"]
+            
+            if source["time"] >= source["clip"]["length"] {
+                if source["loop"] == true {
+                    source["time"] = source["time"] - source["clip"]["length"]
+                } else {
+                    source["isPlaying"] = false
+                }
+            }
+            
+            if source["spatialBlend"] > 0.0 {
+                source = applySpatialAudio(manager, source)
+            }
+        }
+        
+        manager["sources"][i] = source
+        i = i + 1
+    }
+    
+    return manager
+}
+
+fn applySpatialAudio(manager, source) {
+    if len(manager["listeners"]) == 0 {
+        return source
+    }
+    
+    let listener = manager["listeners"][0]
+    let distance = distance3D(source["position"], listener["position"])
+    
+    let attenuation = calculateAttenuation(distance, source["minDistance"], source["maxDistance"], source["rolloffMode"])
+    
+    let doppler = calculateDoppler(source, listener, manager["dopplerFactor"])
+    
+    let spatialVolume = source["volume"] * attenuation * doppler
+    
+    source["spatialVolume"] = spatialVolume
+    
+    return source
+}
+
+fn calculateAttenuation(distance, minDistance, maxDistance, rolloffMode) {
+    if distance <= minDistance {
+        return 1.0
+    }
+    
+    if distance >= maxDistance {
+        return 0.0
+    }
+    
+    if rolloffMode == "logarithmic" {
+        return minDistance / (minDistance + (distance - minDistance))
+    } else if rolloffMode == "linear" {
+        return 1.0 - (distance - minDistance) / (maxDistance - minDistance)
+    } else {
+        return 1.0 / (1.0 + distance)
+    }
+}
+
+fn calculateDoppler(source, listener, dopplerFactor) {
+    let relativeVelocity = {
+        "x": source["velocity"]["x"] - listener["velocity"]["x"],
+        "y": source["velocity"]["y"] - listener["velocity"]["y"],
+        "z": source["velocity"]["z"] - listener["velocity"]["z"]
+    }
+    
+    let direction = {
+        "x": listener["position"]["x"] - source["position"]["x"],
+        "y": listener["position"]["y"] - source["position"]["y"],
+        "z": listener["position"]["z"] - source["position"]["z"]
+    }
+    
+    let distance = sqrt(direction["x"] * direction["x"] + direction["y"] * direction["y"] + direction["z"] * direction["z"])
+    
+    if distance == 0.0 {
+        return 1.0
+    }
+    
+    let normalizedDirection = {
+        "x": direction["x"] / distance,
+        "y": direction["y"] / distance,
+        "z": direction["z"] / distance
+    }
+    
+    let relativeSpeed = relativeVelocity["x"] * normalizedDirection["x"] + 
+                        relativeVelocity["y"] * normalizedDirection["y"] + 
+                        relativeVelocity["z"] * normalizedDirection["z"]
+    
+    let dopplerShift = 1.0 + relativeSpeed * dopplerFactor * 0.01
+    
+    if dopplerShift < 0.5 {
+        dopplerShift = 0.5
+    }
+    
+    if dopplerShift > 2.0 {
+        dopplerShift = 2.0
+    }
+    
+    return dopplerShift
+}
+
+fn distance3D(a, b) {
+    let dx = a["x"] - b["x"]
+    let dy = a["y"] - b["y"]
+    let dz = a["z"] - b["z"]
+    return sqrt(dx * dx + dy * dy + dz * dz)
+}
+
+pub fn createAudioMixer(name) {
+    return {
+        "kind": "AudioMixer",
+        "name": name,
+        "groups": {},
+        "exposedParameters": {},
+        "snapshotTransitions": []
+    }
+}
+
+pub fn addAudioMixerGroup(mixer, groupName, volume) {
+    mixer["groups"][groupName] = {
+        "name": groupName,
+        "volume": volume,
+        "pitch": 1.0,
+        "effects": []
+    }
+    return mixer
+}
+
+pub fn setAudioMixerGroupVolume(mixer, groupName, volume) {
+    if mixer["groups"][groupName] != null {
+        mixer["groups"][groupName]["volume"] = volume
+    }
+    return mixer
+}
+
+pub fn addAudioMixerEffect(mixer, groupName, effect) {
+    if mixer["groups"][groupName] != null {
+        mixer["groups"][groupName]["effects"] = push(mixer["groups"][groupName]["effects"], effect)
+    }
+    return mixer
+}
+
+pub fn createAudioSnapshot(name) {
+    return {
+        "kind": "AudioSnapshot",
+        "name": name,
+        "groupVolumes": {},
+        "transitionDuration": 1.0
+    }
+}
+
+pub fn setAudioSnapshotVolume(snapshot, groupName, volume) {
+    snapshot["groupVolumes"][groupName] = volume
+    return snapshot
+}
+
+pub fn transitionToAudioSnapshot(mixer, snapshot, duration) {
+    let i = 0
+    while i < len(snapshot["groupVolumes"]) {
+        let groupName = snapshot["groupVolumes"][i]
+        let volume = snapshot["groupVolumes"][groupName]
+        
+        if mixer["groups"][groupName] != null {
+            mixer["groups"][groupName]["volume"] = volume
+        }
+        i = i + 1
+    }
+    
+    return mixer
+}
+
+pub fn setMasterVolume(manager, volume) {
+    manager["masterVolume"] = volume
+    return manager
+}
+
+pub fn setDopplerFactor(manager, factor) {
+    manager["dopplerFactor"] = factor
+    return manager
+}
+
+pub fn setRolloffFactor(manager, factor) {
+    manager["rolloffFactor"] = factor
+    return manager
+}
+
+pub fn setDistanceModel(manager, model) {
+    manager["distanceModel"] = model
+    return manager
+}
+
+pub fn playOneShot(manager, clip, position) {
+    let source = createAudioSource(null, clip)
+    source["position"] = position
+    source["loop"] = false
+    source = playAudioSource(source)
+    manager = addAudioSource(manager, source)
+    return manager
+}
+
+pub fn playClipAtPoint(manager, clip, position, volume) {
+    let source = createAudioSource(null, clip)
+    source["position"] = position
+    source["volume"] = volume
+    source["loop"] = false
+    source["spatialBlend"] = 1.0
+    source = playAudioSource(source)
+    manager = addAudioSource(manager, source)
+    return manager
+}
+
+pub fn getAudioSourceTime(source) {
+    return source["time"]
+}
+
+pub fn setAudioSourceTime(source, time) {
+    source["time"] = time
+    return source
+}
+
+pub fn isAudioSourcePlaying(source) {
+    return source["isPlaying"]
+}
+
+pub fn getAudioSourceVolume(source) {
+    return source["volume"]
+}
+
+pub fn getAudioSourcePitch(source) {
+    return source["pitch"]
+}
