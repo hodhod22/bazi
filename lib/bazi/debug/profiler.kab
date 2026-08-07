@@ -1,0 +1,397 @@
+@version "1.0.0"
+
+// import "bazi/debug/profiler"
+// Profiler and debugging tools for performance analysis.
+
+pub fn createProfiler() {
+    return {
+        "kind": "Profiler",
+        "enabled": true,
+        "samples": [],
+        "categories": {
+            "rendering": { "enabled": true, "color": { "r": 1.0, "g": 0.0, "b": 0.0 } },
+            "scripting": { "enabled": true, "color": { "r": 0.0, "g": 1.0, "b": 0.0 } },
+            "physics": { "enabled": true, "color": { "r": 0.0, "g": 0.0, "b": 1.0 } },
+            "ui": { "enabled": true, "color": { "r": 1.0, "g": 1.0, "b": 0.0 } },
+            "audio": { "enabled": true, "color": { "r": 1.0, "g": 0.0, "b": 1.0 } }
+        },
+        "maxSamples": 1000,
+        "currentFrame": 0,
+        "frameTime": 0.0,
+        "fps": 60.0
+    }
+}
+
+pub fn startProfilerSample(profiler, name, category) {
+    if profiler["enabled"] != true {
+        return profiler
+    }
+    
+    if profiler["categories"][category]["enabled"] != true {
+        return profiler
+    }
+    
+    let sample = {
+        "name": name,
+        "category": category,
+        "startTime": 0.0,
+        "endTime": 0.0,
+        "depth": len(profiler["samples"]),
+        "frame": profiler["currentFrame"]
+    }
+    
+    profiler["samples"] = push(profiler["samples"], sample)
+    return profiler
+}
+
+pub fn endProfilerSample(profiler) {
+    if profiler["enabled"] != true {
+        return profiler
+    }
+    
+    if len(profiler["samples"]) > 0 {
+        let index = len(profiler["samples"]) - 1
+        profiler["samples"][index]["endTime"] = 0.0
+    }
+    
+    return profiler
+}
+
+pub fn beginFrame(profiler) {
+    profiler["currentFrame"] = profiler["currentFrame"] + 1
+    profiler["frameTime"] = 0.0
+    return profiler
+}
+
+pub fn endFrame(profiler, dt) {
+    profiler["frameTime"] = dt
+    profiler["fps"] = 1.0 / dt
+    
+    if len(profiler["samples"]) > profiler["maxSamples"] {
+        let newSamples = []
+        let i = len(profiler["samples"]) - profiler["maxSamples"]
+        while i < len(profiler["samples"]) {
+            newSamples = push(newSamples, profiler["samples"][i])
+            i = i + 1
+        }
+        profiler["samples"] = newSamples
+    }
+    
+    return profiler
+}
+
+pub fn getProfilerStats(profiler) {
+    let stats = {
+        "fps": profiler["fps"],
+        "frameTime": profiler["frameTime"],
+        "sampleCount": len(profiler["samples"]),
+        "categories": {}
+    }
+    
+    for category in profiler["categories"] {
+        let categoryStats = {
+            "enabled": profiler["categories"][category]["enabled"],
+            "totalTime": 0.0,
+            "sampleCount": 0
+        }
+        stats["categories"][category] = categoryStats
+    }
+    
+    let i = 0
+    while i < len(profiler["samples"]) {
+        let sample = profiler["samples"][i]
+        let duration = sample["endTime"] - sample["startTime"]
+        
+        if stats["categories"][sample["category"]] != null {
+            stats["categories"][sample["category"]]["totalTime"] = stats["categories"][sample["category"]]["totalTime"] + duration
+            stats["categories"][sample["category"]]["sampleCount"] = stats["categories"][sample["category"]]["sampleCount"] + 1
+        }
+        
+        i = i + 1
+    }
+    
+    return stats
+}
+
+pub fn enableProfilerCategory(profiler, category) {
+    if profiler["categories"][category] != null {
+        profiler["categories"][category]["enabled"] = true
+    }
+    return profiler
+}
+
+pub fn disableProfilerCategory(profiler, category) {
+    if profiler["categories"][category] != null {
+        profiler["categories"][category]["enabled"] = false
+    }
+    return profiler
+}
+
+pub fn clearProfilerSamples(profiler) {
+    profiler["samples"] = []
+    return profiler
+}
+
+pub fn createMemoryProfiler() {
+    return {
+        "kind": "MemoryProfiler",
+        "enabled": true,
+        "samples": [],
+        "maxSamples": 100,
+        "currentAllocation": 0,
+        "peakAllocation": 0,
+        "totalAllocations": 0,
+        "totalDeallocations": 0
+    }
+}
+
+pub fn recordMemoryAllocation(memProfiler, size) {
+    if memProfiler["enabled"] != true {
+        return memProfiler
+    }
+    
+    memProfiler["currentAllocation"] = memProfiler["currentAllocation"] + size
+    memProfiler["totalAllocations"] = memProfiler["totalAllocations"] + size
+    
+    if memProfiler["currentAllocation"] > memProfiler["peakAllocation"] {
+        memProfiler["peakAllocation"] = memProfiler["currentAllocation"]
+    }
+    
+    memProfiler["samples"] = push(memProfiler["samples"], {
+        "type": "allocation",
+        "size": size,
+        "total": memProfiler["currentAllocation"],
+        "timestamp": 0.0
+    })
+    
+    if len(memProfiler["samples"]) > memProfiler["maxSamples"] {
+        let newSamples = []
+        let i = len(memProfiler["samples"]) - memProfiler["maxSamples"]
+        while i < len(memProfiler["samples"]) {
+            newSamples = push(newSamples, memProfiler["samples"][i])
+            i = i + 1
+        }
+        memProfiler["samples"] = newSamples
+    }
+    
+    return memProfiler
+}
+
+pub fn recordMemoryDeallocation(memProfiler, size) {
+    if memProfiler["enabled"] != true {
+        return memProfiler
+    }
+    
+    memProfiler["currentAllocation"] = memProfiler["currentAllocation"] - size
+    memProfiler["totalDeallocations"] = memProfiler["totalDeallocations"] + size
+    
+    memProfiler["samples"] = push(memProfiler["samples"], {
+        "type": "deallocation",
+        "size": size,
+        "total": memProfiler["currentAllocation"],
+        "timestamp": 0.0
+    })
+    
+    if len(memProfiler["samples"]) > memProfiler["maxSamples"] {
+        let newSamples = []
+        let i = len(memProfiler["samples"]) - memProfiler["maxSamples"]
+        while i < len(memProfiler["samples"]) {
+            newSamples = push(newSamples, memProfiler["samples"][i])
+            i = i + 1
+        }
+        memProfiler["samples"] = newSamples
+    }
+    
+    return memProfiler
+}
+
+pub fn getMemoryStats(memProfiler) {
+    return {
+        "current": memProfiler["currentAllocation"],
+        "peak": memProfiler["peakAllocation"],
+        "totalAllocated": memProfiler["totalAllocations"],
+        "totalDeallocated": memProfiler["totalDeallocations"],
+        "sampleCount": len(memProfiler["samples"])
+    }
+}
+
+pub fn createConsole() {
+    return {
+        "kind": "Console",
+        "logs": [],
+        "maxLogs": 1000,
+        "logLevel": "info",
+        "filters": []
+    }
+}
+
+pub fn log(console, message, level) {
+    if level == null || level == undefined { level = "info" }
+    
+    let levels = ["debug", "info", "warning", "error"]
+    let levelPriority = { "debug": 0, "info": 1, "warning": 2, "error": 3 }
+    let currentPriority = levelPriority[console["logLevel"]]
+    let messagePriority = levelPriority[level]
+    
+    if messagePriority >= currentPriority {
+        console["logs"] = push(console["logs"], {
+            "message": message,
+            "level": level,
+            "timestamp": 0.0,
+            "stackTrace": ""
+        })
+        
+        if len(console["logs"]) > console["maxLogs"] {
+            let newLogs = []
+            let i = len(console["logs"]) - console["maxLogs"]
+            while i < len(console["logs"]) {
+                newLogs = push(newLogs, console["logs"][i])
+                i = i + 1
+            }
+            console["logs"] = newLogs
+        }
+    }
+    
+    return console
+}
+
+pub fn logDebug(console, message) {
+    return log(console, message, "debug")
+}
+
+pub fn logInfo(console, message) {
+    return log(console, message, "info")
+}
+
+pub fn logWarning(console, message) {
+    return log(console, message, "warning")
+}
+
+pub fn logError(console, message) {
+    return log(console, message, "error")
+}
+
+pub fn clearConsole(console) {
+    console["logs"] = []
+    return console
+}
+
+pub fn setConsoleLevel(console, level) {
+    console["logLevel"] = level
+    return console
+}
+
+pub fn getConsoleLogs(console, level) {
+    if level == null || level == undefined {
+        return console["logs"]
+    }
+    
+    let filtered = []
+    let i = 0
+    while i < len(console["logs"]) {
+        if console["logs"][i]["level"] == level {
+            filtered = push(filtered, console["logs"][i])
+        }
+        i = i + 1
+    }
+    return filtered
+}
+
+pub fn createDebugger() {
+    return {
+        "kind": "Debugger",
+        "enabled": false,
+        "breakpoints": [],
+        "currentLine": 0,
+        "paused": false,
+        "stepMode": "none",
+        "callStack": [],
+        "variables": {},
+        "watchExpressions": []
+    }
+}
+
+pub fn setBreakpoint(debugger, file, line) {
+    debugger["breakpoints"] = push(debugger["breakpoints"], {
+        "file": file,
+        "line": line,
+        "enabled": true,
+        "hitCount": 0
+    })
+    return debugger
+}
+
+pub fn removeBreakpoint(debugger, file, line) {
+    let newBreakpoints = []
+    let i = 0
+    while i < len(debugger["breakpoints"]) {
+        let bp = debugger["breakpoints"][i]
+        if bp["file"] != file || bp["line"] != line {
+            newBreakpoints = push(newBreakpoints, bp)
+        }
+        i = i + 1
+    }
+    debugger["breakpoints"] = newBreakpoints
+    return debugger
+}
+
+pub fn pauseDebugger(debugger) {
+    debugger["paused"] = true
+    return debugger
+}
+
+pub fn resumeDebugger(debugger) {
+    debugger["paused"] = false
+    debugger["stepMode"] = "none"
+    return debugger
+}
+
+pub fn stepOver(debugger) {
+    debugger["stepMode"] = "over"
+    debugger["paused"] = false
+    return debugger
+}
+
+pub fn stepInto(debugger) {
+    debugger["stepMode"] = "into"
+    debugger["paused"] = false
+    return debugger
+}
+
+pub fn stepOut(debugger) {
+    debugger["stepMode"] = "out"
+    debugger["paused"] = false
+    return debugger
+}
+
+pub fn addWatchExpression(debugger, expression) {
+    debugger["watchExpressions"] = push(debugger["watchExpressions"], {
+        "expression": expression,
+        "value": null
+    })
+    return debugger
+}
+
+pub fn updateWatchExpressions(debugger, context) {
+    let i = 0
+    while i < len(debugger["watchExpressions"]) {
+        let expr = debugger["watchExpressions"][i]
+        debugger["watchExpressions"][i]["value"] = evaluateExpression(expr["expression"], context)
+        i = i + 1
+    }
+    return debugger
+}
+
+fn evaluateExpression(expression, context) {
+    return null
+}
+
+pub fn getDebuggerState(debugger) {
+    return {
+        "enabled": debugger["enabled"],
+        "paused": debugger["paused"],
+        "currentLine": debugger["currentLine"],
+        "breakpointCount": len(debugger["breakpoints"]),
+        "callStackDepth": len(debugger["callStack"])
+    }
+}

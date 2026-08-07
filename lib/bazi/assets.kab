@@ -1,0 +1,326 @@
+@version "1.0.0"
+
+// import "bazi/assets"
+// Asset management system for textures, meshes, materials, audio.
+
+pub fn createAssetManager() {
+    return {
+        "kind": "AssetManager",
+        "textures": {},
+        "meshes": {},
+        "materials": {},
+        "audioClips": {},
+        "prefabs": {},
+        "scenes": {},
+        "bundles": {},
+        "loadedAssets": {},
+        "assetCache": {}
+    }
+}
+
+pub fn loadTexture(manager, name, path, format) {
+    if format == null || format == undefined { format = "rgba" }
+    
+    let texture = {
+        "kind": "Texture",
+        "name": name,
+        "path": path,
+        "format": format,
+        "width": 0,
+        "height": 0,
+        "mipmaps": true,
+        "filterMode": "bilinear",
+        "wrapMode": "repeat",
+        "anisoLevel": 1,
+        "loaded": false
+    }
+    
+    manager["textures"][name] = texture
+    manager["loadedAssets"][name] = texture
+    return texture
+}
+
+pub fn getTexture(manager, name) {
+    return manager["textures"][name]
+}
+
+pub fn unloadTexture(manager, name) {
+    manager["textures"][name] = null
+    manager["loadedAssets"][name] = null
+    return manager
+}
+
+pub fn loadMesh(manager, name, path) {
+    let mesh = {
+        "kind": "Mesh",
+        "name": name,
+        "path": path,
+        "vertices": [],
+        "normals": [],
+        "uvs": [],
+        "colors": [],
+        "tangents": [],
+        "triangles": [],
+        "bounds": null,
+        "loaded": false
+    }
+    
+    manager["meshes"][name] = mesh
+    manager["loadedAssets"][name] = mesh
+    return mesh
+}
+
+pub fn createMeshFromData(manager, name, vertices, normals, uvs, triangles) {
+    let mesh = {
+        "kind": "Mesh",
+        "name": name,
+        "path": null,
+        "vertices": vertices,
+        "normals": normals,
+        "uvs": uvs,
+        "colors": [],
+        "tangents": [],
+        "triangles": triangles,
+        "bounds": calculateMeshBounds(vertices),
+        "loaded": true
+    }
+    
+    manager["meshes"][name] = mesh
+    manager["loadedAssets"][name] = mesh
+    return mesh
+}
+
+fn calculateMeshBounds(vertices) {
+    if len(vertices) == 0 {
+        return { "center": { "x": 0.0, "y": 0.0, "z": 0.0 }, "size": { "x": 0.0, "y": 0.0, "z": 0.0 } }
+    }
+    
+    let minX = vertices[0]["x"]
+    let minY = vertices[0]["y"]
+    let minZ = vertices[0]["z"]
+    let maxX = vertices[0]["x"]
+    let maxY = vertices[0]["y"]
+    let maxZ = vertices[0]["z"]
+    
+    let i = 0
+    while i < len(vertices) {
+        let v = vertices[i]
+        if v["x"] < minX { minX = v["x"] }
+        if v["y"] < minY { minY = v["y"] }
+        if v["z"] < minZ { minZ = v["z"] }
+        if v["x"] > maxX { maxX = v["x"] }
+        if v["y"] > maxY { maxY = v["y"] }
+        if v["z"] > maxZ { maxZ = v["z"] }
+        i = i + 1
+    }
+    
+    let centerX = (minX + maxX) / 2.0
+    let centerY = (minY + maxY) / 2.0
+    let centerZ = (minZ + maxZ) / 2.0
+    
+    return {
+        "center": { "x": centerX, "y": centerY, "z": centerZ },
+        "size": { "x": maxX - minX, "y": maxY - minY, "z": maxZ - minZ }
+    }
+}
+
+pub fn getMesh(manager, name) {
+    return manager["meshes"][name]
+}
+
+pub fn unloadMesh(manager, name) {
+    manager["meshes"][name] = null
+    manager["loadedAssets"][name] = null
+    return manager
+}
+
+pub fn createMaterial(manager, name, shaderPath) {
+    let material = {
+        "kind": "Material",
+        "name": name,
+        "shader": shaderPath,
+        "properties": {
+            "albedo": { "r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0 },
+            "metallic": 0.0,
+            "smoothness": 0.5,
+            "normalScale": 1.0,
+            "emission": { "r": 0.0, "g": 0.0, "b": 0.0, "a": 1.0 }
+        },
+        "textures": {
+            "albedo": null,
+            "normal": null,
+            "metallic": null,
+            "smoothness": null,
+            "emission": null,
+            "ao": null
+        },
+        "renderQueue": 2000,
+        "enableInstancing": false
+    }
+    
+    manager["materials"][name] = material
+    manager["loadedAssets"][name] = material
+    return material
+}
+
+pub fn setMaterialProperty(material, property, value) {
+    material["properties"][property] = value
+    return material
+}
+
+pub fn setMaterialTexture(material, textureSlot, textureName) {
+    material["textures"][textureSlot] = textureName
+    return material
+}
+
+pub fn getMaterial(manager, name) {
+    return manager["materials"][name]
+}
+
+pub fn loadAudioClip(manager, name, path) {
+    let clip = {
+        "kind": "AudioClip",
+        "name": name,
+        "path": path,
+        "length": 0.0,
+        "channels": 2,
+        "frequency": 44100,
+        "samples": [],
+        "loadType": "decompress",
+        "compression": "pcm",
+        "loaded": false
+    }
+    
+    manager["audioClips"][name] = clip
+    manager["loadedAssets"][name] = clip
+    return clip
+}
+
+pub fn getAudioClip(manager, name) {
+    return manager["audioClips"][name]
+}
+
+pub fn unloadAudioClip(manager, name) {
+    manager["audioClips"][name] = null
+    manager["loadedAssets"][name] = null
+    return manager
+}
+
+pub fn registerPrefab(manager, name, prefab) {
+    manager["prefabs"][name] = prefab
+    manager["loadedAssets"][name] = prefab
+    return manager
+}
+
+pub fn getPrefab(manager, name) {
+    return manager["prefabs"][name]
+}
+
+pub fn registerScene(manager, name, scene) {
+    manager["scenes"][name] = scene
+    manager["loadedAssets"][name] = scene
+    return manager
+}
+
+pub fn getScene(manager, name) {
+    return manager["scenes"][name]
+}
+
+pub fn createAssetBundle(name) {
+    return {
+        "kind": "AssetBundle",
+        "name": name,
+        "assets": [],
+        "dependencies": [],
+        "loaded": false
+    }
+}
+
+pub fn addAssetToBundle(bundle, assetName, assetType) {
+    bundle["assets"] = push(bundle["assets"], {
+        "name": assetName,
+        "type": assetType
+    })
+    return bundle
+}
+
+pub fn loadAssetBundle(manager, bundle) {
+    manager["bundles"][bundle["name"]] = bundle
+    return manager
+}
+
+pub fn getAssetBundle(manager, name) {
+    return manager["bundles"][name]
+}
+
+pub fn unloadAssetBundle(manager, name) {
+    let bundle = manager["bundles"][name]
+    if bundle != null {
+        let i = 0
+        while i < len(bundle["assets"]) {
+            let asset = bundle["assets"][i]
+            if asset["type"] == "texture" {
+                manager = unloadTexture(manager, asset["name"])
+            } else if asset["type"] == "mesh" {
+                manager = unloadMesh(manager, asset["name"])
+            } else if asset["type"] == "audio" {
+                manager = unloadAudioClip(manager, asset["name"])
+            }
+            i = i + 1
+        }
+        manager["bundles"][name] = null
+    }
+    return manager
+}
+
+pub fn getLoadedAssetCount(manager) {
+    let count = 0
+    for key in manager["loadedAssets"] {
+        if manager["loadedAssets"][key] != null {
+            count = count + 1
+        }
+    }
+    return count
+}
+
+pub fn getMemoryUsage(manager) {
+    let totalSize = 0
+    for key in manager["textures"] {
+        let tex = manager["textures"][key]
+        if tex != null && tex["loaded"] == true {
+            totalSize = totalSize + tex["width"] * tex["height"] * 4
+        }
+    }
+    for key in manager["meshes"] {
+        let mesh = manager["meshes"][key]
+        if mesh != null && mesh["loaded"] == true {
+            totalSize = totalSize + len(mesh["vertices"]) * 12
+        }
+    }
+    return totalSize
+}
+
+pub fn clearAssetCache(manager) {
+    manager["assetCache"] = {}
+    return manager
+}
+
+pub fn preloadAssets(manager, assetList) {
+    let i = 0
+    while i < len(assetList) {
+        let asset = assetList[i]
+        if asset["type"] == "texture" {
+            loadTexture(manager, asset["name"], asset["path"], asset["format"])
+        } else if asset["type"] == "mesh" {
+            loadMesh(manager, asset["name"], asset["path"])
+        } else if asset["type"] == "audio" {
+            loadAudioClip(manager, asset["name"], asset["path"])
+        }
+        i = i + 1
+    }
+    return manager
+}
+
+pub fn isAssetLoaded(manager, name) {
+    return manager["loadedAssets"][name] != null
+}

@@ -1,0 +1,245 @@
+@version "1.0.0"
+
+// import "bazi/sceneSaveLoad"
+// Scene save/load system for persistence.
+
+pub fn createSceneData() {
+    return {
+        "kind": "SceneData",
+        "name": "",
+        "version": "1.0",
+        "gameObjects": [],
+        "components": {},
+        "hierarchy": null,
+        "settings": {
+            "gravity": { "x": 0.0, "y": -9.81, "z": 0.0 },
+            "ambientLight": { "r": 0.2, "g": 0.2, "b": 0.2 },
+            "fog": {
+                "enabled": false,
+                "mode": "exponential",
+                "density": 0.01,
+                "start": 0.0,
+                "end": 100.0,
+                "color": { "r": 0.5, "g": 0.5, "b": 0.5 }
+            },
+            "skybox": null,
+            "renderSettings": {
+                "ambientIntensity": 1.0,
+                "reflectionIntensity": 1.0,
+                "haloStrength": 0.5,
+                "flareStrength": 1.0
+            }
+        }
+    }
+}
+
+pub fn saveScene(scene, hierarchy, name) {
+    let sceneData = createSceneData()
+    sceneData["name"] = name
+    sceneData["hierarchy"] = saveHierarchy(hierarchy)
+    
+    let world = scene["world"]
+    let entities = query(world, "GameObject")
+    
+    let i = 0
+    while i < len(entities) {
+        let entityId = entities[i]
+        let go = get(world, entityId, "GameObject")
+        
+        if go != null && go != undefined && go["active"] == true {
+            let gameObjectData = {
+                "id": entityId,
+                "name": scene["names"]["" + entityId],
+                "active": go["active"],
+                "components": []
+            }
+            
+            let componentNames = ["Transform", "Rigidbody", "MeshRenderer", "AudioSource", "Camera", "Light", "Collider", "ParticleSystem"]
+            let j = 0
+            while j < len(componentNames) {
+                let comp = get(world, entityId, componentNames[j])
+                if comp != null && comp != undefined {
+                    gameObjectData["components"] = push(gameObjectData["components"], comp)
+                }
+                j = j + 1
+            }
+            
+            sceneData["gameObjects"] = push(sceneData["gameObjects"], gameObjectData)
+        }
+        
+        i = i + 1
+    }
+    
+    return sceneData
+}
+
+pub fn loadScene(sceneData, scene, hierarchy) {
+    scene = clearScene(scene)
+    hierarchy = clearHierarchy(hierarchy)
+    
+    let i = 0
+    while i < len(sceneData["gameObjects"]) {
+        let goData = sceneData["gameObjects"][i]
+        
+        let spawned = spawnGo(scene, goData["name"])
+        scene = spawned["scene"]
+        let id = spawned["id"]
+        
+        let j = 0
+        while j < len(goData["components"]) {
+            let comp = goData["components"][j]
+            scene = addComp(scene, id, comp["kind"], comp)
+            j = j + 1
+        }
+        
+        if isRoot(sceneData["hierarchy"], goData["id"]) {
+            hierarchy = addRootNode(hierarchy, id, goData["name"])
+        }
+        
+        i = i + 1
+    }
+    
+    let parentMap = sceneData["hierarchy"]["parentMap"]
+    for key in parentMap {
+        let parentId = parentMap[key]
+        if parentId != null && parentId != undefined {
+            hierarchy = setParent(hierarchy, key, parentId)
+        }
+    }
+    
+    scene["settings"] = sceneData["settings"]
+    
+    return { "scene": scene, "hierarchy": hierarchy }
+}
+
+pub fn clearScene(scene) {
+    let world = scene["world"]
+    let entities = query(world, "GameObject")
+    
+    let i = 0
+    while i < len(entities) {
+        scene = destroyGo(scene, entities[i])
+        i = i + 1
+    }
+    
+    scene["behaviours"] = []
+    scene["names"] = {}
+    scene["alive"] = {}
+    
+    return scene
+}
+
+pub fn saveSceneToFile(sceneData, path) {
+    return {
+        "success": true,
+        "path": path,
+        "data": sceneData
+    }
+}
+
+pub fn loadSceneFromFile(path) {
+    return {
+        "success": true,
+        "path": path,
+        "data": null
+    }
+}
+
+pub fn createSceneSnapshot(scene, hierarchy) {
+    return saveScene(scene, hierarchy, "Snapshot")
+}
+
+pub fn applySceneSnapshot(snapshot, scene, hierarchy) {
+    return loadScene(snapshot, scene, hierarchy)
+}
+
+pub fn serializeSceneData(sceneData) {
+    return sceneData
+}
+
+pub fn deserializeSceneData(data) {
+    return data
+}
+
+pub fn exportScene(sceneData, format) {
+    if format == null || format == undefined { format = "json" }
+    
+    if format == "json" {
+        return serializeSceneData(sceneData)
+    } else if format == "binary" {
+        return serializeSceneData(sceneData)
+    }
+    
+    return null
+}
+
+pub fn importScene(data, format) {
+    if format == null || format == undefined { format = "json" }
+    
+    if format == "json" {
+        return deserializeSceneData(data)
+    } else if format == "binary" {
+        return deserializeSceneData(data)
+    }
+    
+    return null
+}
+
+pub fn getSceneStatistics(scene) {
+    let world = scene["world"]
+    let entities = query(world, "GameObject")
+    
+    let stats = {
+        "gameObjectCount": len(entities),
+        "behaviourCount": len(scene["behaviours"]),
+        "activeCount": 0,
+        "inactiveCount": 0,
+        "componentCounts": {}
+    }
+    
+    let i = 0
+    while i < len(entities) {
+        let go = get(world, entities[i], "GameObject")
+        if go != null && go != undefined {
+            if go["active"] == true {
+                stats["activeCount"] = stats["activeCount"] + 1
+            } else {
+                stats["inactiveCount"] = stats["inactiveCount"] + 1
+            }
+        }
+        i = i + 1
+    }
+    
+    return stats
+}
+
+pub fn validateSceneData(sceneData) {
+    let valid = true
+    let errors = []
+    
+    if sceneData["name"] == null || sceneData["name"] == "" {
+        valid = false
+        errors = push(errors, "Scene name is missing")
+    }
+    
+    if sceneData["gameObjects"] == null {
+        valid = false
+        errors = push(errors, "GameObjects array is missing")
+    }
+    
+    let i = 0
+    while i < len(sceneData["gameObjects"]) {
+        let go = sceneData["gameObjects"][i]
+        if go["id"] == null {
+            valid = false
+            errors = push(errors, "GameObject missing ID")
+        }
+        if go["name"] == null || go["name"] == "" {
+            valid = false
+            errors = push(errors, "GameObject missing name")
+        }
+        i = i + 1
+    }
+    
+    return { "valid": valid, "errors": errors }
+}

@@ -1,0 +1,75 @@
+@version "1.0.0"
+
+// import "bazi/ui/canvas"
+// Unity-like Canvas for UI rendering.
+
+pub fn createCanvas() {
+    return {
+        "kind": "Canvas",
+        "renderMode": "screenSpaceOverlay",
+        "sortingOrder": 0,
+        "sortingLayerID": 0,
+        "sortingLayerName": "Default",
+        "targetDisplay": 0,
+        "pixelPerfect": false,
+        "renderCamera": null,
+        "planeDistance": 100.0,
+        "worldCamera": null,
+        "scaleFactor": 1.0,
+        "referencePixelsPerUnit": 100.0,
+        "referenceResolution": { "x": 1920, "y": 1080 },
+        "matchWidthOrHeight": 0.5,
+        "uiElements": [],
+        "rootRectTransform": null
+    }
+}
+
+pub fn setCanvasRenderMode(canvas, mode) {
+    canvas["renderMode"] = mode
+    return canvas
+}
+
+pub fn setCanvasSortingOrder(canvas, order) {
+    canvas["sortingOrder"] = order
+    return canvas
+}
+
+pub fn setCanvasScaleFactor(canvas, scaleFactor) {
+    canvas["scaleFactor"] = scaleFactor
+    return canvas
+}
+
+pub fn setCanvasReferenceResolution(canvas, width, height) {
+    canvas["referenceResolution"] = { "x": width, "y": height }
+    return canvas
+}
+
+pub fn addUIElement(canvas, element) {
+    canvas["uiElements"] = push(canvas["uiElements"], element)
+    return canvas
+}
+
+pub fn removeUIElement(canvas, elementId) {
+    let elements = canvas["uiElements"]
+    let newElements = []
+    let i = 0
+    while i < len(elements) {
+        if elements[i]["id"] != elementId {
+            newElements = push(newElements, elements[i])
+        }
+        i = i + 1
+    }
+    canvas["uiElements"] = newElements
+    return canvas
+}
+
+pub fn getUIElement(canvas, elementId) {
+    let i = 0
+    while i < len(canvas["uiElements"]) {
+        if canvas["uiElements"][i]["id"] == elementId {
+            return canvas["uiElements"][i]
+        }
+        i = i + 1
+    }
+    return null
+}

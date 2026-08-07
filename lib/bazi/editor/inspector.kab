@@ -1,0 +1,298 @@
+@version "1.0.0"
+
+// import "bazi/editor/inspector"
+// Inspector system for visual editing of GameObjects and components.
+
+pub fn createInspector() {
+    return {
+        "kind": "Inspector",
+        "selectedObject": null,
+        "selectedComponent": null,
+        "locked": false,
+        "history": [],
+        "historyIndex": -1
+    }
+}
+
+pub fn selectObject(inspector, scene, objectId) {
+    let world = scene["world"]
+    let go = get(world, objectId, "GameObject")
+    
+    if go != null && go != undefined {
+        inspector["selectedObject"] = {
+            "id": objectId,
+            "name": scene["names"]["" + objectId],
+            "gameObject": go
+        }
+        inspector["selectedComponent"] = null
+    }
+    
+    return inspector
+}
+
+pub fn deselectObject(inspector) {
+    inspector["selectedObject"] = null
+    inspector["selectedComponent"] = null
+    return inspector
+}
+
+pub fn selectComponent(inspector, componentName) {
+    if inspector["selectedObject"] != null {
+        inspector["selectedComponent"] = componentName
+    }
+    return inspector
+}
+
+pub fn getSelectedObject(inspector) {
+    return inspector["selectedObject"]
+}
+
+pub fn getSelectedComponent(inspector) {
+    return inspector["selectedComponent"]
+}
+
+pub fn lockInspector(inspector, locked) {
+    inspector["locked"] = locked == true
+    return inspector
+}
+
+pub fn isInspectorLocked(inspector) {
+    return inspector["locked"] == true
+}
+
+pub fn recordChange(inspector, change) {
+    if inspector["historyIndex"] < len(inspector["history"]) - 1 {
+        let newHistory = []
+        let i = 0
+        while i <= inspector["historyIndex"] {
+            newHistory = push(newHistory, inspector["history"][i])
+            i = i + 1
+        }
+        inspector["history"] = newHistory
+    }
+    
+    inspector["history"] = push(inspector["history"], change)
+    inspector["historyIndex"] = len(inspector["history"]) - 1
+    
+    return inspector
+}
+
+pub fn undo(inspector, scene) {
+    if inspector["historyIndex"] >= 0 {
+        let change = inspector["history"][inspector["historyIndex"]]
+        scene = applyChange(scene, change, true)
+        inspector["historyIndex"] = inspector["historyIndex"] - 1
+    }
+    return { "inspector": inspector, "scene": scene }
+}
+
+pub fn redo(inspector, scene) {
+    if inspector["historyIndex"] < len(inspector["history"]) - 1 {
+        inspector["historyIndex"] = inspector["historyIndex"] + 1
+        let change = inspector["history"][inspector["historyIndex"]]
+        scene = applyChange(scene, change, false)
+    }
+    return { "inspector": inspector, "scene": scene }
+}
+
+fn applyChange(scene, change, undo) {
+    let world = scene["world"]
+    
+    if change["type"] == "componentProperty" {
+        let entityId = change["entityId"]
+        let componentName = change["component"]
+        let property = change["property"]
+        
+        let comp = get(world, entityId, componentName)
+        if comp != null {
+            if undo == true {
+                comp[property] = change["oldValue"]
+            } else {
+                comp[property] = change["newValue"]
+            }
+            world = add(world, entityId, componentName, comp)
+        }
+    } else if change["type"] == "gameObjectName" {
+        let entityId = change["entityId"]
+        if undo == true {
+            scene["names"]["" + entityId] = change["oldValue"]
+        } else {
+            scene["names"]["" + entityId] = change["newValue"]
+        }
+    }
+    
+    scene["world"] = world
+    return scene
+}
+
+pub fn canUndo(inspector) {
+    return inspector["historyIndex"] >= 0
+}
+
+pub fn canRedo(inspector) {
+    return inspector["historyIndex"] < len(inspector["history"]) - 1
+}
+
+pub fn clearHistory(inspector) {
+    inspector["history"] = []
+    inspector["historyIndex"] = -1
+    return inspector
+}
+
+pub fn getObjectComponents(scene, objectId) {
+    let world = scene["world"]
+    let components = []
+    
+    let componentNames = ["Transform", "Rigidbody", "MeshRenderer", "AudioSource", "Camera", "Light", "Collider", "ParticleSystem", "GameObject"]
+    let i = 0
+    while i < len(componentNames) {
+        let comp = get(world, objectId, componentNames[i])
+        if comp != null && comp != undefined {
+            components = push(components, {
+                "name": componentNames[i],
+                "data": comp
+            })
+        }
+        i = i + 1
+    }
+    
+    return components
+}
+
+pub fn setComponentProperty(scene, objectId, componentName, property, value) {
+    let world = scene["world"]
+    let comp = get(world, objectId, componentName)
+    
+    if comp != null && comp != undefined {
+        let oldValue = comp[property]
+        comp[property] = value
+        world = add(world, objectId, componentName, comp)
+        scene["world"] = world
+        
+        return {
+            "scene": scene,
+            "change": {
+                "type": "componentProperty",
+                "entityId": objectId,
+                "component": componentName,
+                "property": property,
+                "oldValue": oldValue,
+                "newValue": value
+            }
+        }
+    }
+    
+    return { "scene": scene, "change": null }
+}
+
+pub fn setGameObjectName(scene, objectId, newName) {
+    let oldName = scene["names"]["" + objectId]
+    scene["names"]["" + objectId] = newName
+    
+    return {
+        "scene": scene,
+        "change": {
+            "type": "gameObjectName",
+            "entityId": objectId,
+            "oldValue": oldName,
+            "newValue": newName
+        }
+    }
+}
+
+pub fn addComponent(scene, objectId, component) {
+    let world = scene["world"]
+    world = add(world, objectId, component["kind"], component)
+    scene["world"] = world
+    
+    return {
+        "scene": scene,
+        "change": {
+            "type": "addComponent",
+            "entityId": objectId,
+            "component": component
+        }
+    }
+}
+
+pub fn removeComponent(scene, objectId, componentName) {
+    let world = scene["world"]
+    let comp = get(world, objectId, componentName)
+    
+    if comp != null {
+        world = remove(world, entityId, componentName)
+        scene["world"] = world
+        
+        return {
+            "scene": scene,
+            "change": {
+                "type": "removeComponent",
+                "entityId": objectId,
+                "componentName": componentName,
+                "component": comp
+            }
+        }
+    }
+    
+    return { "scene": scene, "change": null }
+}
+
+pub fn duplicateObject(scene, hierarchy, objectId) {
+    let world = scene["world"]
+    let originalGo = get(world, objectId, "GameObject")
+    let originalName = scene["names"]["" + objectId]
+    
+    let spawned = spawnGo(scene, originalName + " (Copy)")
+    scene = spawned["scene"]
+    let newId = spawned["id"]
+    
+    let componentNames = ["Transform", "Rigidbody", "MeshRenderer", "AudioSource", "Camera", "Light", "Collider", "ParticleSystem"]
+    let i = 0
+    while i < len(componentNames) {
+        let comp = get(world, objectId, componentNames[i])
+        if comp != null && comp != undefined {
+            let newComp = copyComponent(comp)
+            scene = addComp(scene, newId, componentNames[i], newComp)
+        }
+        i = i + 1
+    }
+    
+    let parentId = getParent(hierarchy, objectId)
+    if parentId != null {
+        hierarchy = setParent(hierarchy, newId, parentId)
+    } else {
+        hierarchy = addRootNode(hierarchy, newId, originalName + " (Copy)")
+    }
+    
+    return { "scene": scene, "hierarchy": hierarchy, "newId": newId }
+}
+
+fn copyComponent(comp) {
+    let newComp = {}
+    for key in comp {
+        newComp[key] = comp[key]
+    }
+    return newComp
+}
+
+pub fn deleteObject(scene, hierarchy, objectId) {
+    scene = destroyGo(scene, objectId)
+    hierarchy = removeNode(hierarchy, objectId)
+    return { "scene": scene, "hierarchy": hierarchy }
+}
+
+pub fn getInspectorData(inspector, scene) {
+    if inspector["selectedObject"] == null {
+        return null
+    }
+    
+    let objectId = inspector["selectedObject"]["id"]
+    let components = getObjectComponents(scene, objectId)
+    
+    return {
+        "objectId": objectId,
+        "name": inspector["selectedObject"]["name"],
+        "components": components,
+        "selectedComponent": inspector["selectedComponent"]
+    }
+}

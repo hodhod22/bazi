@@ -1,0 +1,69 @@
+@version "1.0.0"
+
+// import "bazi/components/meshRenderer"
+// Unity-like MeshRenderer component for rendering meshes.
+
+pub fn createMeshRenderer(meshPath, materialPath) {
+    return {
+        "kind": "MeshRenderer",
+        "mesh": meshPath,
+        "material": materialPath,
+        "materials": [],
+        "sharedMaterials": [],
+        "enabled": true,
+        "lightmapIndex": -1,
+        "realtimeLightmapIndex": -1,
+        "lightmapScaleOffset": { "x": 1.0, "y": 1.0, "z": 0.0, "w": 0.0 },
+        "receiveShadows": true,
+        "shadowCastingMode": "on",
+        "motionVectorGenerationMode": "automatic",
+        "allowOcclusionWhenDynamic": true,
+        "probeAnchor": null,
+        "reflectionProbeUsage": "blendProbes",
+        "lightProbeUsage": "blendProbes",
+        "sortingLayerID": 0,
+        "sortingLayerName": "Default",
+        "sortingOrder": 0
+    }
+}
+
+pub fn setMeshRendererMesh(renderer, meshPath) {
+    renderer["mesh"] = meshPath
+    return renderer
+}
+
+pub fn setMeshRendererMaterial(renderer, materialPath) {
+    renderer["material"] = materialPath
+    return renderer
+}
+
+pub fn setMeshRendererMaterials(renderer, materialPaths) {
+    renderer["materials"] = materialPaths
+    renderer["sharedMaterials"] = materialPaths
+    return renderer
+}
+
+pub fn setMeshRendererEnabled(renderer, enabled) {
+    renderer["enabled"] = enabled == true
+    return renderer
+}
+
+pub fn setMeshRendererShadows(renderer, castShadows, receiveShadows) {
+    if castShadows == true {
+        renderer["shadowCastingMode"] = "on"
+    } else {
+        renderer["shadowCastingMode"] = "off"
+    }
+    renderer["receiveShadows"] = receiveShadows == true
+    return renderer
+}
+
+pub fn setMeshRendererSortingOrder(renderer, order) {
+    renderer["sortingOrder"] = order
+    return renderer
+}
+
+pub fn setMeshRendererSortingLayer(renderer, layerName) {
+    renderer["sortingLayerName"] = layerName
+    return renderer
+}

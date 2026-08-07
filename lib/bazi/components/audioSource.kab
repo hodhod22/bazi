@@ -1,0 +1,82 @@
+@version "1.0.0"
+
+// import "bazi/components/audioSource"
+// Unity-like AudioSource component for playing audio.
+
+pub fn createAudioSource(clipPath) {
+    return {
+        "kind": "AudioSource",
+        "clip": clipPath,
+        "volume": 1.0,
+        "pitch": 1.0,
+        "loop": false,
+        "playOnAwake": true,
+        "spatialBlend": 0.0,
+        "dopplerLevel": 1.0,
+        "spread": 0.0,
+        "minDistance": 1.0,
+        "maxDistance": 500.0,
+        "rolloffMode": "logarithmic",
+        "priority": 128,
+        "mute": false,
+        "bypassEffects": false,
+        "bypassListenerEffects": false,
+        "bypassReverbZones": false,
+        "isPlaying": false,
+        "time": 0.0
+    }
+}
+
+pub fn setAudioSourceClip(source, clipPath) {
+    source["clip"] = clipPath
+    return source
+}
+
+pub fn setAudioSourceVolume(source, volume) {
+    source["volume"] = volume
+    return source
+}
+
+pub fn setAudioSourcePitch(source, pitch) {
+    source["pitch"] = pitch
+    return source
+}
+
+pub fn setAudioSourceLoop(source, loop) {
+    source["loop"] = loop == true
+    return source
+}
+
+pub fn setAudioSourceSpatialBlend(source, blend) {
+    source["spatialBlend"] = blend
+    return source
+}
+
+pub fn setAudioSource3DSettings(source, minDistance, maxDistance, rolloffMode) {
+    source["minDistance"] = minDistance
+    source["maxDistance"] = maxDistance
+    source["rolloffMode"] = rolloffMode
+    return source
+}
+
+pub fn audioSourcePlay(source) {
+    source["isPlaying"] = true
+    source["time"] = 0.0
+    return source
+}
+
+pub fn audioSourceStop(source) {
+    source["isPlaying"] = false
+    source["time"] = 0.0
+    return source
+}
+
+pub fn audioSourcePause(source) {
+    source["isPlaying"] = false
+    return source
+}
+
+pub fn audioSourceUnpause(source) {
+    source["isPlaying"] = true
+    return source
+}

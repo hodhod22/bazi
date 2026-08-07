@@ -1,0 +1,313 @@
+@version "1.0.0"
+
+// import "bazi/build/buildSystem"
+// Build and publish system for different platforms.
+
+pub fn createBuildConfig() {
+    return {
+        "kind": "BuildConfig",
+        "projectName": "BaziProject",
+        "version": "1.0.0",
+        "company": "",
+        "product": "",
+        "buildNumber": 1,
+        "platform": "web",
+        "targetPlatforms": ["web", "desktop", "mobile"],
+        "scenes": [],
+        "outputPath": "./build",
+        "compression": "gzip",
+        "optimization": "balanced",
+        "debugSymbols": false,
+        "stripDebug": true
+    }
+}
+
+pub fn setBuildPlatform(config, platform) {
+    config["platform"] = platform
+    return config
+}
+
+pub fn addBuildScene(config, scenePath) {
+    config["scenes"] = push(config["scenes"], scenePath)
+    return config
+}
+
+pub fn setBuildOutputPath(config, path) {
+    config["outputPath"] = path
+    return config
+}
+
+pub fn setBuildOptimization(config, level) {
+    config["optimization"] = level
+    return config
+}
+
+pub fn createBuildReport() {
+    return {
+        "kind": "BuildReport",
+        "success": false,
+        "platform": "",
+        "duration": 0.0,
+        "errors": [],
+        "warnings": [],
+        "buildSize": 0,
+        "buildPath": "",
+        "timestamp": 0.0
+    }
+}
+
+pub fn buildProject(config, sceneData) {
+    let report = createBuildReport()
+    report["platform"] = config["platform"]
+    report["timestamp"] = 0.0
+    
+    let startTime = 0.0
+    
+    if config["platform"] == "web" {
+        report = buildWeb(config, sceneData, report)
+    } else if config["platform"] == "desktop" {
+        report = buildDesktop(config, sceneData, report)
+    } else if config["platform"] == "mobile" {
+        report = buildMobile(config, sceneData, report)
+    } else {
+        report["errors"] = push(report["errors"], "Unsupported platform: " + config["platform"])
+    }
+    
+    let endTime = 0.0
+    report["duration"] = endTime - startTime
+    
+    return report
+}
+
+fn buildWeb(config, sceneData, report) {
+    report["buildPath"] = config["outputPath"] + "/web"
+    
+    if len(config["scenes"]) == 0 {
+        report["errors"] = push(report["errors"], "No scenes specified for build")
+        return report
+    }
+    
+    let i = 0
+    while i < len(config["scenes"]) {
+        let scenePath = config["scenes"][i]
+        if sceneData[scenePath] == null {
+            report["warnings"] = push(report["warnings"], "Scene not found: " + scenePath)
+        }
+        i = i + 1
+    }
+    
+    report["success"] = true
+    report["buildSize"] = 1024 * 1024
+    
+    return report
+}
+
+fn buildDesktop(config, sceneData, report) {
+    report["buildPath"] = config["outputPath"] + "/desktop"
+    
+    if len(config["scenes"]) == 0 {
+        report["errors"] = push(report["errors"], "No scenes specified for build")
+        return report
+    }
+    
+    let i = 0
+    while i < len(config["scenes"]) {
+        let scenePath = config["scenes"][i]
+        if sceneData[scenePath] == null {
+            report["warnings"] = push(report["warnings"], "Scene not found: " + scenePath)
+        }
+        i = i + 1
+    }
+    
+    report["success"] = true
+    report["buildSize"] = 10 * 1024 * 1024
+    
+    return report
+}
+
+fn buildMobile(config, sceneData, report) {
+    report["buildPath"] = config["outputPath"] + "/mobile"
+    
+    if len(config["scenes"]) == 0 {
+        report["errors"] = push(report["errors"], "No scenes specified for build")
+        return report
+    }
+    
+    let i = 0
+    while i < len(config["scenes"]) {
+        let scenePath = config["scenes"][i]
+        if sceneData[scenePath] == null {
+            report["warnings"] = push(report["warnings"], "Scene not found: " + scenePath)
+        }
+        i = i + 1
+    }
+    
+    report["success"] = true
+    report["buildSize"] = 5 * 1024 * 1024
+    
+    return report
+}
+
+pub fn createAppBundle(platform, appName) {
+    return {
+        "kind": "AppBundle",
+        "platform": platform,
+        "appName": appName,
+        "version": "1.0.0",
+        "bundleId": "",
+        "minVersion": "",
+        "targetVersion": "",
+        "permissions": [],
+        "capabilities": []
+    }
+}
+
+pub fn setAppBundleId(bundle, bundleId) {
+    bundle["bundleId"] = bundleId
+    return bundle
+}
+
+pub fn addAppPermission(bundle, permission) {
+    bundle["permissions"] = push(bundle["permissions"], permission)
+    return bundle
+}
+
+pub fn addAppCapability(bundle, capability) {
+    bundle["capabilities"] = push(bundle["capabilities"], capability)
+    return bundle
+}
+
+pub fn publishToStore(report, storeConfig) {
+    let publishReport = {
+        "kind": "PublishReport",
+        "success": false,
+        "store": storeConfig["store"],
+        "version": report["version"],
+        "errors": [],
+        "warnings": []
+    }
+    
+    if report["success"] != true {
+        publishReport["errors"] = push(publishReport["errors"], "Build failed, cannot publish")
+        return publishReport
+    }
+    
+    if storeConfig["store"] == "web" {
+        publishReport["success"] = true
+    } else if storeConfig["store"] == "steam" {
+        publishReport["success"] = true
+    } else if storeConfig["store"] == "appstore" {
+        if storeConfig["bundleId"] == null || storeConfig["bundleId"] == "" {
+            publishReport["errors"] = push(publishReport["errors"], "Bundle ID required for App Store")
+        } else {
+            publishReport["success"] = true
+        }
+    } else if storeConfig["store"] == "playstore" {
+        if storeConfig["bundleId"] == null || storeConfig["bundleId"] == "" {
+            publishReport["errors"] = push(publishReport["errors"], "Bundle ID required for Play Store")
+        } else {
+            publishReport["success"] = true
+        }
+    } else {
+        publishReport["errors"] = push(publishReport["errors"], "Unsupported store: " + storeConfig["store"])
+    }
+    
+    return publishReport
+}
+
+pub fn createStoreConfig(store, bundleId, apiKey) {
+    return {
+        "kind": "StoreConfig",
+        "store": store,
+        "bundleId": bundleId,
+        "apiKey": apiKey,
+        "username": "",
+        "password": ""
+    }
+}
+
+pub fn validateBuildConfig(config) {
+    let valid = true
+    let errors = []
+    
+    if config["projectName"] == null || config["projectName"] == "" {
+        valid = false
+        errors = push(errors, "Project name is required")
+    }
+    
+    if config["version"] == null || config["version"] == "" {
+        valid = false
+        errors = push(errors, "Version is required")
+    }
+    
+    if config["outputPath"] == null || config["outputPath"] == "" {
+        valid = false
+        errors = push(errors, "Output path is required")
+    }
+    
+    return { "valid": valid, "errors": errors }
+}
+
+pub fn getBuildStatistics(report) {
+    return {
+        "platform": report["platform"],
+        "duration": report["duration"],
+        "size": report["buildSize"],
+        "errorCount": len(report["errors"]),
+        "warningCount": len(report["warnings"]),
+        "success": report["success"]
+    }
+}
+
+pub fn createBuildProfile(name, platform, settings) {
+    return {
+        "kind": "BuildProfile",
+        "name": name,
+        "platform": platform,
+        "settings": settings,
+        "enabled": true
+    }
+}
+
+pub fn setBuildProfileEnabled(profile, enabled) {
+    profile["enabled"] = enabled == true
+    return profile
+}
+
+pub fn getBuildProfileSettings(profile) {
+    return profile["settings"]
+}
+
+pub fn createIncrementalBuild(baseBuild) {
+    return {
+        "kind": "IncrementalBuild",
+        "baseBuild": baseBuild,
+        "changedAssets": [],
+        "changedScenes": [],
+        "incremental": true
+    }
+}
+
+pub fn addChangedAsset(build, assetPath) {
+    build["changedAssets"] = push(build["changedAssets"], assetPath)
+    return build
+}
+
+pub fn addChangedScene(build, scenePath) {
+    build["changedScenes"] = push(build["changedScenes"], scenePath)
+    return build
+}
+
+pub fn runIncrementalBuild(build, config) {
+    let report = createBuildReport()
+    report["platform"] = config["platform"]
+    
+    if len(build["changedAssets"]) == 0 && len(build["changedScenes"]) == 0 {
+        report["warnings"] = push(report["warnings"], "No changes detected, skipping build")
+        report["success"] = true
+        return report
+    }
+    
+    report = buildProject(config, {})
+    return report
+}

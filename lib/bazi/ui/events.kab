@@ -1,0 +1,148 @@
+@version "1.0.0"
+
+// import "bazi/ui/events"
+// UI event system for handling user interactions.
+
+pub fn createEventSystem() {
+    return {
+        "kind": "EventSystem",
+        "firstSelected": null,
+        "sendNavigationEvents": true,
+        "pixelDragThreshold": 5.0,
+        "currentInputModule": null,
+        "currentSelected": null,
+        "hoveredObjects": []
+    }
+}
+
+pub fn setEventSystemSelected(eventSystem, gameObjectId) {
+    eventSystem["currentSelected"] = gameObjectId
+    return eventSystem
+}
+
+pub fn createPointerEventData() {
+    return {
+        "kind": "PointerEventData",
+        "position": { "x": 0.0, "y": 0.0 },
+        "delta": { "x": 0.0, "y": 0.0 },
+        "pressPosition": { "x": 0.0, "y": 0.0 },
+        "clickTime": 0.0,
+        "clickCount": 0,
+        "pointerId": -1,
+        "eligibleForClick": false,
+        "pointerEnter": null,
+        "pointerPress": null,
+        "rawPointerPress": null,
+        "pointerDrag": null
+    }
+}
+
+pub fn createBaseEventData() {
+    return {
+        "kind": "BaseEventData",
+        "selectedObject": null,
+        "currentInputModule": null
+    }
+}
+
+pub fn executeEvents(eventSystem, canvas) {
+    let i = 0
+    while i < len(canvas["uiElements"]) {
+        let element = canvas["uiElements"][i]
+        
+        if element["kind"] == "Button" {
+            if element["onClick"] != null && element["interactable"] == true {
+                if element["clicked"] == true {
+                    element["onClick"]()
+                    element["clicked"] = false
+                }
+            }
+        } else if element["kind"] == "Slider" {
+            if element["onValueChanged"] != null {
+                if element["valueChanged"] == true {
+                    element["onValueChanged"](element["value"])
+                    element["valueChanged"] = false
+                }
+            }
+        } else if element["kind"] == "Toggle" {
+            if element["onValueChanged"] != null {
+                if element["toggled"] == true {
+                    element["onValueChanged"](element["isOn"])
+                    element["toggled"] = false
+                }
+            }
+        } else if element["kind"] == "InputField" {
+            if element["onValueChanged"] != null {
+                if element["textChanged"] == true {
+                    element["onValueChanged"](element["text"])
+                    element["textChanged"] = false
+                }
+            }
+        }
+        
+        i = i + 1
+    }
+    
+    return eventSystem
+}
+
+pub fn raycastUI(canvas, position) {
+    let hitElements = []
+    
+    let i = 0
+    while i < len(canvas["uiElements"]) {
+        let element = canvas["uiElements"][i]
+        
+        if element["raycastTarget"] == true {
+            if isPointInElement(position, element) {
+                hitElements = push(hitElements, element)
+            }
+        }
+        
+        i = i + 1
+    }
+    
+    return hitElements
+}
+
+fn isPointInElement(position, element) {
+    let rect = element["rectTransform"]
+    if rect == null || rect == undefined {
+        return false
+    }
+    
+    let pos = rect["anchoredPosition"]
+    let size = rect["sizeDelta"]
+    
+    let halfWidth = size["x"] / 2.0
+    let halfHeight = size["y"] / 2.0
+    
+    let x = position["x"]
+    let y = position["y"]
+    
+    return x >= pos["x"] - halfWidth && x <= pos["x"] + halfWidth &&
+           y >= pos["y"] - halfHeight && y <= pos["y"] + halfHeight
+}
+
+pub fn setElementClicked(element, clicked) {
+    element["clicked"] = clicked == true
+    return element
+}
+
+pub fn setElementHovered(element, hovered) {
+    element["hovered"] = hovered == true
+    return element
+}
+
+pub fn createUIEventCallback(target, method) {
+    return {
+        "target": target,
+        "method": method
+    }
+}
+
+pub fn invokeCallback(callback, data) {
+    if callback != null && callback != undefined {
+        callback["method"](callback["target"], data)
+    }
+}

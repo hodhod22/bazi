@@ -1,0 +1,85 @@
+@version "1.0.0"
+
+// import "bazi/components/collider"
+// Unity-like Collider components for physics collision.
+
+pub fn createBoxCollider(center, size) {
+    if center == null || center == undefined { center = { "x": 0.0, "y": 0.0, "z": 0.0 } }
+    if size == null || size == undefined { size = { "x": 1.0, "y": 1.0, "z": 1.0 } }
+    
+    return {
+        "kind": "BoxCollider",
+        "center": center,
+        "size": size,
+        "isTrigger": false,
+        "enabled": true,
+        "material": null
+    }
+}
+
+pub fn createSphereCollider(center, radius) {
+    if center == null || center == undefined { center = { "x": 0.0, "y": 0.0, "z": 0.0 } }
+    if radius == null || radius == undefined { radius = 0.5 }
+    
+    return {
+        "kind": "SphereCollider",
+        "center": center,
+        "radius": radius,
+        "isTrigger": false,
+        "enabled": true,
+        "material": null
+    }
+}
+
+pub fn createCapsuleCollider(center, radius, height, direction) {
+    if center == null || center == undefined { center = { "x": 0.0, "y": 0.0, "z": 0.0 } }
+    if radius == null || radius == undefined { radius = 0.5 }
+    if height == null || height == undefined { height = 2.0 }
+    if direction == null || direction == undefined { direction = 1 }
+    
+    return {
+        "kind": "CapsuleCollider",
+        "center": center,
+        "radius": radius,
+        "height": height,
+        "direction": direction,
+        "isTrigger": false,
+        "enabled": true,
+        "material": null
+    }
+}
+
+pub fn setColliderTrigger(collider, isTrigger) {
+    collider["isTrigger"] = isTrigger == true
+    return collider
+}
+
+pub fn setColliderEnabled(collider, enabled) {
+    collider["enabled"] = enabled == true
+    return collider
+}
+
+pub fn setColliderCenter(collider, x, y, z) {
+    collider["center"] = { "x": x, "y": y, "z": z }
+    return collider
+}
+
+pub fn setBoxColliderSize(collider, x, y, z) {
+    collider["size"] = { "x": x, "y": y, "z": z }
+    return collider
+}
+
+pub fn setSphereColliderRadius(collider, radius) {
+    collider["radius"] = radius
+    return collider
+}
+
+pub fn setCapsuleColliderRadius(collider, radius) {
+    collider["radius"] = radius
+    return collider
+}
+
+pub fn setCapsuleColliderHeight(collider, height) {
+    collider["height"] = height
+    return collider
+}

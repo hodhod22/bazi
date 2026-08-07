@@ -1,0 +1,117 @@
+@version "1.0.0"
+
+// import "bazi/components/particleSystem"
+// Unity-like ParticleSystem component for visual effects.
+
+pub fn createParticleSystem() {
+    return {
+        "kind": "ParticleSystem",
+        "duration": 5.0,
+        "looping": true,
+        "prewarm": false,
+        "startDelay": 0.0,
+        "startLifetime": { "min": 5.0, "max": 5.0 },
+        "startSpeed": { "min": 5.0, "max": 5.0 },
+        "startSize": { "min": 1.0, "max": 1.0 },
+        "startRotation": { "min": 0.0, "max": 0.0 },
+        "startColor": { "min": { "r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0 }, "max": { "r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0 } },
+        "gravityModifier": 0.0,
+        "maxParticles": 1000,
+        "rateOverTime": 10.0,
+        "rateOverDistance": 0.0,
+        "simulationSpace": "local",
+        "scalingMode": "local",
+        "playOnAwake": true,
+        "emission": {
+            "enabled": true,
+            "rateOverTime": 10.0,
+            "rateOverDistance": 0.0,
+            "bursts": []
+        },
+        "shape": {
+            "type": "cone",
+            "angle": 25.0,
+            "radius": 1.0,
+            "arc": 360.0
+        },
+        "colorOverLifetime": {
+            "enabled": false,
+            "color": []
+        },
+        "sizeOverLifetime": {
+            "enabled": false,
+            "size": []
+        },
+        "rotationOverLifetime": {
+            "enabled": false,
+            "rotation": []
+        },
+        "velocityOverLifetime": {
+            "enabled": false,
+            "x": { "min": 0.0, "max": 0.0 },
+            "y": { "min": 0.0, "max": 0.0 },
+            "z": { "min": 0.0, "max": 0.0 }
+        },
+        "isPlaying": false,
+        "time": 0.0
+    }
+}
+
+pub fn setParticleSystemEmissionRate(system, rate) {
+    system["emission"]["rateOverTime"] = rate
+    system["rateOverTime"] = rate
+    return system
+}
+
+pub fn setParticleSystemLifetime(system, min, max) {
+    if max == null || max == undefined { max = min }
+    system["startLifetime"]["min"] = min
+    system["startLifetime"]["max"] = max
+    return system
+}
+
+pub fn setParticleSystemSpeed(system, min, max) {
+    if max == null || max == undefined { max = min }
+    system["startSpeed"]["min"] = min
+    system["startSpeed"]["max"] = max
+    return system
+}
+
+pub fn setParticleSystemSize(system, min, max) {
+    if max == null || max == undefined { max = min }
+    system["startSize"]["min"] = min
+    system["startSize"]["max"] = max
+    return system
+}
+
+pub fn setParticleSystemGravity(system, gravity) {
+    system["gravityModifier"] = gravity
+    return system
+}
+
+pub fn setParticleSystemShape(system, shapeType, angle, radius) {
+    system["shape"]["type"] = shapeType
+    if angle != null { system["shape"]["angle"] = angle }
+    if radius != null { system["shape"]["radius"] = radius }
+    return system
+}
+
+pub fn setParticleSystemLooping(system, looping) {
+    system["looping"] = looping == true
+    return system
+}
+
+pub fn particleSystemPlay(system) {
+    system["isPlaying"] = true
+    return system
+}
+
+pub fn particleSystemStop(system, clear) {
+    system["isPlaying"] = false
+    return system
+}
+
+pub fn particleSystemPause(system) {
+    system["isPlaying"] = false
+    return system
+}

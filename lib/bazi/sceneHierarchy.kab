@@ -1,0 +1,260 @@
+@version "1.0.0"
+
+// import "bazi/sceneHierarchy"
+// Scene hierarchy system with parent-child relationships and save/load.
+
+pub fn createSceneHierarchy() {
+    return {
+        "kind": "SceneHierarchy",
+        "rootNodes": [],
+        "parentMap": {},
+        "childrenMap": {},
+        "nameMap": {}
+    }
+}
+
+pub fn addRootNode(hierarchy, nodeId, name) {
+    hierarchy["rootNodes"] = push(hierarchy["rootNodes"], nodeId)
+    hierarchy["nameMap"]["" + nodeId] = name
+    return hierarchy
+}
+
+pub fn setParent(hierarchy, childId, parentId) {
+    hierarchy["parentMap"]["" + childId] = parentId
+    
+    if hierarchy["childrenMap"]["" + parentId] == null {
+        hierarchy["childrenMap"]["" + parentId] = []
+    }
+    hierarchy["childrenMap"]["" + parentId] = push(hierarchy["childrenMap"]["" + parentId], childId)
+    
+    return hierarchy
+}
+
+pub fn getParent(hierarchy, nodeId) {
+    return hierarchy["parentMap"]["" + nodeId]
+}
+
+pub fn getChildren(hierarchy, nodeId) {
+    let children = hierarchy["childrenMap"]["" + nodeId]
+    if children == null || children == undefined {
+        return []
+    }
+    return children
+}
+
+pub fn getChildCount(hierarchy, nodeId) {
+    let children = hierarchy["childrenMap"]["" + nodeId]
+    if children == null || children == undefined {
+        return 0
+    }
+    return len(children)
+}
+
+pub fn findNodeByName(hierarchy, name) {
+    for key in hierarchy["nameMap"] {
+        if hierarchy["nameMap"][key] == name {
+            return key
+        }
+    }
+    return null
+}
+
+pub fn removeNode(hierarchy, nodeId) {
+    let parentId = hierarchy["parentMap"]["" + nodeId]
+    
+    if parentId != null && parentId != undefined {
+        let children = hierarchy["childrenMap"]["" + parentId]
+        let newChildren = []
+        let i = 0
+        while i < len(children) {
+            if children[i] != nodeId {
+                newChildren = push(newChildren, children[i])
+            }
+            i = i + 1
+        }
+        hierarchy["childrenMap"]["" + parentId] = newChildren
+    }
+    
+    let childIds = hierarchy["childrenMap"]["" + nodeId]
+    if childIds != null && childIds != undefined {
+        let i = 0
+        while i < len(childIds) {
+            hierarchy = removeNode(hierarchy, childIds[i])
+            i = i + 1
+        }
+    }
+    
+    hierarchy["parentMap"]["" + nodeId] = null
+    hierarchy["childrenMap"]["" + nodeId] = null
+    hierarchy["nameMap"]["" + nodeId] = null
+    
+    let newRoots = []
+    let i = 0
+    while i < len(hierarchy["rootNodes"]) {
+        if hierarchy["rootNodes"][i] != nodeId {
+            newRoots = push(newRoots, hierarchy["rootNodes"][i])
+        }
+        i = i + 1
+    }
+    hierarchy["rootNodes"] = newRoots
+    
+    return hierarchy
+}
+
+pub fn reparent(hierarchy, childId, newParentId) {
+    let oldParentId = hierarchy["parentMap"]["" + childId]
+    
+    if oldParentId != null && oldParentId != undefined {
+        let children = hierarchy["childrenMap"]["" + oldParentId]
+        let newChildren = []
+        let i = 0
+        while i < len(children) {
+            if children[i] != childId {
+                newChildren = push(newChildren, children[i])
+            }
+            i = i + 1
+        }
+        hierarchy["childrenMap"]["" + oldParentId] = newChildren
+    }
+    
+    hierarchy = setParent(hierarchy, childId, newParentId)
+    return hierarchy
+}
+
+pub fn getRootNodes(hierarchy) {
+    return hierarchy["rootNodes"]
+}
+
+pub fn isRoot(hierarchy, nodeId) {
+    let i = 0
+    while i < len(hierarchy["rootNodes"]) {
+        if hierarchy["rootNodes"][i] == nodeId {
+            return true
+        }
+        i = i + 1
+    }
+    return false
+}
+
+pub fn getDepth(hierarchy, nodeId) {
+    let depth = 0
+    let currentId = nodeId
+    while true {
+        let parentId = hierarchy["parentMap"]["" + currentId]
+        if parentId == null || parentId == undefined {
+            break
+        }
+        depth = depth + 1
+        currentId = parentId
+        if depth > 100 {
+            break
+        }
+    }
+    return depth
+}
+
+pub fn getAllDescendants(hierarchy, nodeId) {
+    let descendants = []
+    let children = getChildren(hierarchy, nodeId)
+    let i = 0
+    while i < len(children) {
+        let childId = children[i]
+        descendants = push(descendants, childId)
+        let childDescendants = getAllDescendants(hierarchy, childId)
+        let j = 0
+        while j < len(childDescendants) {
+            descendants = push(descendants, childDescendants[j])
+            j = j + 1
+        }
+        i = i + 1
+    }
+    return descendants
+}
+
+pub fn getAncestors(hierarchy, nodeId) {
+    let ancestors = []
+    let currentId = nodeId
+    while true {
+        let parentId = hierarchy["parentMap"]["" + currentId]
+        if parentId == null || parentId == undefined {
+            break
+        }
+        ancestors = push(ancestors, parentId)
+        currentId = parentId
+        if len(ancestors) > 100 {
+            break
+        }
+    }
+    return ancestors
+}
+
+pub fn findCommonAncestor(hierarchy, nodeA, nodeB) {
+    let ancestorsA = getAncestors(hierarchy, nodeA)
+    let ancestorsB = getAncestors(hierarchy, nodeB)
+    
+    let i = 0
+    while i < len(ancestorsA) {
+        let j = 0
+        while j < len(ancestorsB) {
+            if ancestorsA[i] == ancestorsB[j] {
+                return ancestorsA[i]
+            }
+            j = j + 1
+        }
+        i = i + 1
+    }
+    
+    return null
+}
+
+pub fn saveHierarchy(hierarchy) {
+    return {
+        "rootNodes": hierarchy["rootNodes"],
+        "parentMap": hierarchy["parentMap"],
+        "childrenMap": hierarchy["childrenMap"],
+        "nameMap": hierarchy["nameMap"]
+    }
+}
+
+pub fn loadHierarchy(data) {
+    return {
+        "kind": "SceneHierarchy",
+        "rootNodes": data["rootNodes"],
+        "parentMap": data["parentMap"],
+        "childrenMap": data["childrenMap"],
+        "nameMap": data["nameMap"]
+    }
+}
+
+pub fn clearHierarchy(hierarchy) {
+    hierarchy["rootNodes"] = []
+    hierarchy["parentMap"] = {}
+    hierarchy["childrenMap"] = {}
+    hierarchy["nameMap"] = {}
+    return hierarchy
+}
+
+pub fn getNodeCount(hierarchy) {
+    let count = 0
+    for key in hierarchy["nameMap"] {
+        count = count + 1
+    }
+    return count
+}
+
+pub fn validateHierarchy(hierarchy) {
+    let valid = true
+    let errors = []
+    
+    for key in hierarchy["parentMap"] {
+        let parentId = hierarchy["parentMap"][key]
+        if parentId != null && parentId != undefined {
+            if hierarchy["nameMap"]["" + parentId] == null {
+                valid = false
+                errors = push(errors, "Node " + key + " has invalid parent " + parentId)
+            }
+        }
+    }
+    
+    return { "valid": valid, "errors": errors }
+}

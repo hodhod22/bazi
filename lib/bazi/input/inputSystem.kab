@@ -1,0 +1,283 @@
+@version "1.0.0"
+
+// import "bazi/input/inputSystem"
+// Unified input system for keyboard, mouse, gamepad, touch.
+
+pub fn createInputSystem() {
+    return {
+        "kind": "InputSystem",
+        "keyboard": {
+            "keys": {},
+            "keyDown": {},
+            "keyUp": {}
+        },
+        "mouse": {
+            "position": { "x": 0.0, "y": 0.0 },
+            "delta": { "x": 0.0, "y": 0.0 },
+            "scroll": { "x": 0.0, "y": 0.0 },
+            "buttons": {
+                "left": false,
+                "right": false,
+                "middle": false
+            },
+            "buttonDown": {
+                "left": false,
+                "right": false,
+                "middle": false
+            },
+            "buttonUp": {
+                "left": false,
+                "right": false,
+                "middle": false
+            }
+        },
+        "gamepad": {
+            "connected": false,
+            "leftStick": { "x": 0.0, "y": 0.0 },
+            "rightStick": { "x": 0.0, "y": 0.0 },
+            "leftTrigger": 0.0,
+            "rightTrigger": 0.0,
+            "dpad": { "x": 0.0, "y": 0.0 },
+            "buttons": {},
+            "buttonDown": {},
+            "buttonUp": {}
+        },
+        "touch": {
+            "touches": [],
+            "tapCount": 0
+        },
+        "actionMaps": {}
+    }
+}
+
+pub fn createActionMap(name) {
+    return {
+        "kind": "ActionMap",
+        "name": name,
+        "actions": {},
+        "enabled": true
+    }
+}
+
+pub fn createAction(actionMap, name, binding) {
+    actionMap["actions"][name] = {
+        "name": name,
+        "binding": binding,
+        "value": 0.0,
+        "pressed": false,
+        "released": false
+    }
+    return actionMap
+}
+
+pub fn addActionMap(inputSystem, actionMap) {
+    inputSystem["actionMaps"][actionMap["name"]] = actionMap
+    return inputSystem
+}
+
+pub fn getAction(inputSystem, actionMapName, actionName) {
+    let actionMap = inputSystem["actionMaps"][actionMapName]
+    if actionMap != null && actionMap != undefined {
+        return actionMap["actions"][actionName]
+    }
+    return null
+}
+
+pub fn getActionValue(inputSystem, actionMapName, actionName) {
+    let action = getAction(inputSystem, actionMapName, actionName)
+    if action != null {
+        return action["value"]
+    }
+    return 0.0
+}
+
+pub fn isActionPressed(inputSystem, actionMapName, actionName) {
+    let action = getAction(inputSystem, actionMapName, actionName)
+    if action != null {
+        return action["pressed"] == true
+    }
+    return false
+}
+
+pub fn isActionReleased(inputSystem, actionMapName, actionName) {
+    let action = getAction(inputSystem, actionMapName, actionName)
+    if action != null {
+        return action["released"] == true
+    }
+    return false
+}
+
+pub fn getKey(inputSystem, keyCode) {
+    return inputSystem["keyboard"]["keys"]["" + keyCode] == true
+}
+
+pub fn getKeyDown(inputSystem, keyCode) {
+    return inputSystem["keyboard"]["keyDown"]["" + keyCode] == true
+}
+
+pub fn getKeyUp(inputSystem, keyCode) {
+    return inputSystem["keyboard"]["keyUp"]["" + keyCode] == true
+}
+
+pub fn getMouseButton(inputSystem, button) {
+    return inputSystem["mouse"]["buttons"][button] == true
+}
+
+pub fn getMouseButtonDown(inputSystem, button) {
+    return inputSystem["mouse"]["buttonDown"][button] == true
+}
+
+pub fn getMouseButtonUp(inputSystem, button) {
+    return inputSystem["mouse"]["buttonUp"][button] == true
+}
+
+pub fn getMousePosition(inputSystem) {
+    return inputSystem["mouse"]["position"]
+}
+
+pub fn getMouseDelta(inputSystem) {
+    return inputSystem["mouse"]["delta"]
+}
+
+pub fn getMouseScroll(inputSystem) {
+    return inputSystem["mouse"]["scroll"]
+}
+
+pub fn getGamepadButton(inputSystem, button) {
+    return inputSystem["gamepad"]["buttons"]["" + button] == true
+}
+
+pub fn getGamepadButtonDown(inputSystem, button) {
+    return inputSystem["gamepad"]["buttonDown"]["" + button] == true
+}
+
+pub fn getGamepadButtonUp(inputSystem, button) {
+    return inputSystem["gamepad"]["buttonUp"]["" + button] == true
+}
+
+pub fn getGamepadAxis(inputSystem, axis) {
+    if axis == "leftStick" {
+        return inputSystem["gamepad"]["leftStick"]
+    } else if axis == "rightStick" {
+        return inputSystem["gamepad"]["rightStick"]
+    } else if axis == "dpad" {
+        return inputSystem["gamepad"]["dpad"]
+    } else if axis == "leftTrigger" {
+        return { "x": inputSystem["gamepad"]["leftTrigger"], "y": 0.0 }
+    } else if axis == "rightTrigger" {
+        return { "x": inputSystem["gamepad"]["rightTrigger"], "y": 0.0 }
+    }
+    return { "x": 0.0, "y": 0.0 }
+}
+
+pub fn isGamepadConnected(inputSystem) {
+    return inputSystem["gamepad"]["connected"] == true
+}
+
+pub fn getTouchCount(inputSystem) {
+    return len(inputSystem["touch"]["touches"])
+}
+
+pub fn getTouch(inputSystem, index) {
+    if index >= 0 && index < len(inputSystem["touch"]["touches"]) {
+        return inputSystem["touch"]["touches"][index]
+    }
+    return null
+}
+
+pub fn updateInputSystem(inputSystem) {
+    let i = 0
+    for key in inputSystem["keyboard"]["keyDown"] {
+        inputSystem["keyboard"]["keyDown"][key] = false
+    }
+    for key in inputSystem["keyboard"]["keyUp"] {
+        inputSystem["keyboard"]["keyUp"][key] = false
+    }
+    
+    for key in inputSystem["mouse"]["buttonDown"] {
+        inputSystem["mouse"]["buttonDown"][key] = false
+    }
+    for key in inputSystem["mouse"]["buttonUp"] {
+        inputSystem["mouse"]["buttonUp"][key] = false
+    }
+    
+    inputSystem["mouse"]["delta"] = { "x": 0.0, "y": 0.0 }
+    inputSystem["mouse"]["scroll"] = { "x": 0.0, "y": 0.0 }
+    
+    for key in inputSystem["gamepad"]["buttonDown"] {
+        inputSystem["gamepad"]["buttonDown"][key] = false
+    }
+    for key in inputSystem["gamepad"]["buttonUp"] {
+        inputSystem["gamepad"]["buttonUp"][key] = false
+    }
+    
+    for mapName in inputSystem["actionMaps"] {
+        let actionMap = inputSystem["actionMaps"][mapName]
+        if actionMap["enabled"] == true {
+            for actionName in actionMap["actions"] {
+                let action = actionMap["actions"][actionName]
+                action["pressed"] = false
+                action["released"] = false
+                actionMap["actions"][actionName] = action
+            }
+            inputSystem["actionMaps"][mapName] = actionMap
+        }
+    }
+    
+    return inputSystem
+}
+
+pub fn processActionBindings(inputSystem) {
+    for mapName in inputSystem["actionMaps"] {
+        let actionMap = inputSystem["actionMaps"][mapName]
+        if actionMap["enabled"] == true {
+            for actionName in actionMap["actions"] {
+                let action = actionMap["actions"][actionName]
+                let binding = action["binding"]
+                
+                if binding["type"] == "key" {
+                    let pressed = getKey(inputSystem, binding["key"])
+                    action["value"] = pressed ? 1.0 : 0.0
+                    action["pressed"] = pressed && !action["value"]
+                    action["released"] = !pressed && action["value"] == 1.0
+                } else if binding["type"] == "mouseButton" {
+                    let pressed = getMouseButton(inputSystem, binding["button"])
+                    action["value"] = pressed ? 1.0 : 0.0
+                    action["pressed"] = getMouseButtonDown(inputSystem, binding["button"])
+                    action["released"] = getMouseButtonUp(inputSystem, binding["button"])
+                } else if binding["type"] == "axis" {
+                    if binding["source"] == "mouse" {
+                        let delta = getMouseDelta(inputSystem)
+                        action["value"] = delta["x"]
+                    } else if binding["source"] == "gamepad" {
+                        let axis = getGamepadAxis(inputSystem, binding["axis"])
+                        action["value"] = axis["x"]
+                    }
+                }
+                
+                actionMap["actions"][actionName] = action
+            }
+            inputSystem["actionMaps"][mapName] = actionMap
+        }
+    }
+    
+    return inputSystem
+}
+
+pub fn enableActionMap(inputSystem, actionMapName) {
+    let actionMap = inputSystem["actionMaps"][actionMapName]
+    if actionMap != null {
+        actionMap["enabled"] = true
+        inputSystem["actionMaps"][actionMapName] = actionMap
+    }
+    return inputSystem
+}
+
+pub fn disableActionMap(inputSystem, actionMapName) {
+    let actionMap = inputSystem["actionMaps"][actionMapName]
+    if actionMap != null {
+        actionMap["enabled"] = false
+        inputSystem["actionMaps"][actionMapName] = actionMap
+    }
+    return inputSystem
+}

@@ -1,0 +1,103 @@
+@version "1.0.0"
+
+// import "bazi/components/rigidbody"
+// Unity-like Rigidbody component for physics simulation.
+
+pub fn createRigidbody(mass, drag, angularDrag, useGravity) {
+    if mass == null || mass == undefined { mass = 1.0 }
+    if drag == null || drag == undefined { drag = 0.0 }
+    if angularDrag == null || angularDrag == undefined { angularDrag = 0.05 }
+    if useGravity == null || useGravity == undefined { useGravity = true }
+    
+    return {
+        "kind": "Rigidbody",
+        "mass": mass,
+        "drag": drag,
+        "angularDrag": angularDrag,
+        "useGravity": useGravity,
+        "isKinematic": false,
+        "velocity": { "x": 0.0, "y": 0.0, "z": 0.0 },
+        "angularVelocity": { "x": 0.0, "y": 0.0, "z": 0.0 },
+        "constraints": {
+            "freezePositionX": false,
+            "freezePositionY": false,
+            "freezePositionZ": false,
+            "freezeRotationX": false,
+            "freezeRotationY": false,
+            "freezeRotationZ": false
+        },
+        "interpolation": "none",
+        "collisionDetection": "discrete"
+    }
+}
+
+pub fn setRigidbodyVelocity(rb, x, y, z) {
+    rb["velocity"] = { "x": x, "y": y, "z": z }
+    return rb
+}
+
+pub fn setRigidbodyAngularVelocity(rb, x, y, z) {
+    rb["angularVelocity"] = { "x": x, "y": y, "z": z }
+    return rb
+}
+
+pub fn setRigidbodyMass(rb, mass) {
+    rb["mass"] = mass
+    return rb
+}
+
+pub fn setRigidbodyKinematic(rb, kinematic) {
+    rb["isKinematic"] = kinematic == true
+    return rb
+}
+
+pub fn setRigidbodyGravity(rb, enabled) {
+    rb["useGravity"] = enabled == true
+    return rb
+}
+
+pub fn addRigidbodyForce(rb, force, mode) {
+    if mode == null || mode == undefined { mode = "force" }
+    
+    let fx = force["x"]
+    let fy = force["y"]
+    let fz = force["z"]
+    
+    if mode == "force" {
+        fx = fx / rb["mass"]
+        fy = fy / rb["mass"]
+        fz = fz / rb["mass"]
+    }
+    
+    rb["velocity"]["x"] = rb["velocity"]["x"] + fx
+    rb["velocity"]["y"] = rb["velocity"]["y"] + fy
+    rb["velocity"]["z"] = rb["velocity"]["z"] + fz
+    
+    return rb
+}
+
+pub fn addRigidbodyTorque(rb, torque) {
+    let tx = torque["x"] / rb["mass"]
+    let ty = torque["y"] / rb["mass"]
+    let tz = torque["z"] / rb["mass"]
+    
+    rb["angularVelocity"]["x"] = rb["angularVelocity"]["x"] + tx
+    rb["angularVelocity"]["y"] = rb["angularVelocity"]["y"] + ty
+    rb["angularVelocity"]["z"] = rb["angularVelocity"]["z"] + tz
+    
+    return rb
+}
+
+pub fn setRigidbodyConstraints(rb, freezePosition, freezeRotation) {
+    if freezePosition != null {
+        rb["constraints"]["freezePositionX"] = freezePosition["x"] == true
+        rb["constraints"]["freezePositionY"] = freezePosition["y"] == true
+        rb["constraints"]["freezePositionZ"] = freezePosition["z"] == true
+    }
+    if freezeRotation != null {
+        rb["constraints"]["freezeRotationX"] = freezeRotation["x"] == true
+        rb["constraints"]["freezeRotationY"] = freezeRotation["y"] == true
+        rb["constraints"]["freezeRotationZ"] = freezeRotation["z"] == true
+    }
+    return rb
+}

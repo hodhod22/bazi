@@ -1,0 +1,85 @@
+@version "1.0.0"
+
+// import "bazi/components/camera"
+// Unity-like Camera component for rendering scenes.
+
+pub fn createCamera() {
+    return {
+        "kind": "Camera",
+        "clearFlags": "skybox",
+        "backgroundColor": { "r": 0.2, "g": 0.2, "b": 0.2, "a": 1.0 },
+        "orthographic": false,
+        "orthographicSize": 5.0,
+        "fieldOfView": 60.0,
+        "nearClipPlane": 0.3,
+        "farClipPlane": 1000.0,
+        "depth": 0.0,
+        "cullingMask": -1,
+        "renderingPath": "usePlayerSettings",
+        "targetTexture": null,
+        "targetDisplay": 0,
+        "hdr": true,
+        "msaa": 1,
+        "allowHDR": true,
+        "allowMSAA": true,
+        "dynamicResolution": false,
+        "stereoTargetEye": "both",
+        "occlusionCulling": true
+    }
+}
+
+pub fn setCameraPosition(camera, x, y, z) {
+    camera["position"] = { "x": x, "y": y, "z": z }
+    return camera
+}
+
+pub fn setCameraRotation(camera, pitch, yaw, roll) {
+    camera["rotation"] = { "pitch": pitch, "yaw": yaw, "roll": roll }
+    return camera
+}
+
+pub fn setCameraFOV(camera, fov) {
+    camera["fieldOfView"] = fov
+    return camera
+}
+
+pub fn setCameraOrthographic(camera, orthographic, size) {
+    camera["orthographic"] = orthographic == true
+    if size != null && size != undefined {
+        camera["orthographicSize"] = size
+    }
+    return camera
+}
+
+pub fn setCameraClipPlanes(camera, near, far) {
+    camera["nearClipPlane"] = near
+    camera["farClipPlane"] = far
+    return camera
+}
+
+pub fn setCameraBackgroundColor(camera, r, g, b, a) {
+    camera["backgroundColor"] = { "r": r, "g": g, "b": b, "a": a }
+    return camera
+}
+
+pub fn setCameraCullingMask(camera, mask) {
+    camera["cullingMask"] = mask
+    return camera
+}
+
+pub fn setCameraDepth(camera, depth) {
+    camera["depth"] = depth
+    return camera
+}
+
+pub fn cameraLookAt(camera, target) {
+    let dx = target["x"] - camera["position"]["x"]
+    let dy = target["y"] - camera["position"]["y"]
+    let dz = target["z"] - camera["position"]["z"]
+    
+    let yaw = atan2(dz, dx)
+    let pitch = atan2(dy, sqrt(dx * dx + dz * dz))
+    
+    camera["rotation"] = { "pitch": pitch, "yaw": yaw, "roll": 0.0 }
+    return camera
+}

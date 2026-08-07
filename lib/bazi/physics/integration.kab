@@ -1,0 +1,335 @@
+@version "1.0.0"
+
+// import "bazi/physics/integration"
+// Physics integration with nova-interpreter physics system.
+
+import "game/physics"
+
+pub fn createPhysicsWorld() {
+    return {
+        "kind": "PhysicsWorld",
+        "gravity": { "x": 0.0, "y": -9.81, "z": 0.0 },
+        "rigidbodies": {},
+        "colliders": {},
+        "joints": {},
+        "solverIterations": 6,
+        "solverVelocityIterations": 1,
+        "fixedTimeStep": 0.02,
+        "maxSubSteps": 3
+    }
+}
+
+pub fn setPhysicsGravity(world, x, y, z) {
+    world["gravity"] = { "x": x, "y": y, "z": z }
+    return world
+}
+
+pub fn addRigidBody(physicsWorld, entityId, rigidbody) {
+    physicsWorld["rigidbodies"]["" + entityId] = rigidbody
+    return physicsWorld
+}
+
+pub fn removeRigidBody(physicsWorld, entityId) {
+    physicsWorld["rigidbodies"]["" + entityId] = null
+    return physicsWorld
+}
+
+pub fn getRigidBody(physicsWorld, entityId) {
+    return physicsWorld["rigidbodies"]["" + entityId]
+}
+
+pub fn addCollider(physicsWorld, entityId, collider) {
+    physicsWorld["colliders"]["" + entityId] = collider
+    return physicsWorld
+}
+
+pub fn removeCollider(physicsWorld, entityId) {
+    physicsWorld["colliders"]["" + entityId] = null
+    return physicsWorld
+}
+
+pub fn getCollider(physicsWorld, entityId) {
+    return physicsWorld["colliders"]["" + entityId]
+}
+
+pub fn stepPhysics(scene, physicsWorld, dt) {
+    let world = scene["world"]
+    
+    for entityId in physicsWorld["rigidbodies"] {
+        let rb = physicsWorld["rigidbodies"][entityId]
+        if rb != null && rb != undefined && rb["isKinematic"] != true {
+            
+            let transform = get(world, entityId, "Transform")
+            if transform != null && transform != undefined {
+                
+                if rb["useGravity"] == true {
+                    rb["velocity"]["x"] = rb["velocity"]["x"] + physicsWorld["gravity"]["x"] * dt
+                    rb["velocity"]["y"] = rb["velocity"]["y"] + physicsWorld["gravity"]["y"] * dt
+                    rb["velocity"]["z"] = rb["velocity"]["z"] + physicsWorld["gravity"]["z"] * dt
+                }
+                
+                let drag = 1.0 - rb["drag"] * dt
+                if drag < 0.0 { drag = 0.0 }
+                rb["velocity"]["x"] = rb["velocity"]["x"] * drag
+                rb["velocity"]["y"] = rb["velocity"]["y"] * drag
+                rb["velocity"]["z"] = rb["velocity"]["z"] * drag
+                
+                if rb["constraints"]["freezePositionX"] != true {
+                    transform["x"] = transform["x"] + rb["velocity"]["x"] * dt
+                }
+                if rb["constraints"]["freezePositionY"] != true {
+                    transform["y"] = transform["y"] + rb["velocity"]["y"] * dt
+                }
+                if rb["constraints"]["freezePositionZ"] != true {
+                    transform["z"] = transform["z"] + rb["velocity"]["z"] * dt
+                }
+                
+                world = add(world, entityId, "Transform", transform)
+                physicsWorld["rigidbodies"][entityId] = rb
+            }
+        }
+    }
+    
+    scene["world"] = world
+    return { "scene": scene, "physicsWorld": physicsWorld }
+}
+
+pub fn checkCollisions(scene, physicsWorld) {
+    let world = scene["world"]
+    let collisions = []
+    
+    let entityIds = []
+    for entityId in physicsWorld["colliders"] {
+        entityIds = push(entityIds, entityId)
+    }
+    
+    let i = 0
+    while i < len(entityIds) {
+        let j = i + 1
+        while j < len(entityIds) {
+            let idA = entityIds[i]
+            let idB = entityIds[j]
+            
+            let colliderA = physicsWorld["colliders"]["" + idA]
+            let colliderB = physicsWorld["colliders"]["" + idB]
+            
+            if colliderA != null && colliderB != null && colliderA["enabled"] == true && colliderB["enabled"] == true {
+                let transformA = get(world, idA, "Transform")
+                let transformB = get(world, idB, "Transform")
+                
+                if transformA != null && transformB != null {
+                    let collision = checkColliderCollision(colliderA, transformA, colliderB, transformB)
+                    if collision == true {
+                        collisions = push(collisions, {
+                            "entityA": idA,
+                            "entityB": idB,
+                            "colliderA": colliderA,
+                            "colliderB": colliderB
+                        })
+                    }
+                }
+            }
+            
+            j = j + 1
+        }
+        i = i + 1
+    }
+    
+    return collisions
+}
+
+fn checkColliderCollision(colliderA, transformA, colliderB, transformB) {
+    let posA = { "x": transformA["x"], "y": transformA["y"], "z": transformA["z"] }
+    let posB = { "x": transformB["x"], "y": transformB["y"], "z": transformB["z"] }
+    
+    if colliderA["kind"] == "SphereCollider" && colliderB["kind"] == "SphereCollider" {
+        let centerA = colliderA["center"]
+        let centerB = colliderB["center"]
+        let radiusA = colliderA["radius"]
+        let radiusB = colliderB["radius"]
+        
+        let dx = (posA["x"] + centerA["x"]) - (posB["x"] + centerB["x"])
+        let dy = (posA["y"] + centerA["y"]) - (posB["y"] + centerB["y"])
+        let dz = (posA["z"] + centerA["z"]) - (posB["z"] + centerB["z"])
+        let dist = sqrt(dx * dx + dy * dy + dz * dz)
+        
+        return dist < (radiusA + radiusB)
+    }
+    
+    if colliderA["kind"] == "BoxCollider" && colliderB["kind"] == "BoxCollider" {
+        let centerA = colliderA["center"]
+        let sizeA = colliderA["size"]
+        let centerB = colliderB["center"]
+        let sizeB = colliderB["size"]
+        
+        let minA = {
+            "x": posA["x"] + centerA["x"] - sizeA["x"] / 2.0,
+            "y": posA["y"] + centerA["y"] - sizeA["y"] / 2.0,
+            "z": posA["z"] + centerA["z"] - sizeA["z"] / 2.0
+        }
+        let maxA = {
+            "x": posA["x"] + centerA["x"] + sizeA["x"] / 2.0,
+            "y": posA["y"] + centerA["y"] + sizeA["y"] / 2.0,
+            "z": posA["z"] + centerA["z"] + sizeA["z"] / 2.0
+        }
+        
+        let minB = {
+            "x": posB["x"] + centerB["x"] - sizeB["x"] / 2.0,
+            "y": posB["y"] + centerB["y"] - sizeB["y"] / 2.0,
+            "z": posB["z"] + centerB["z"] - sizeB["z"] / 2.0
+        }
+        let maxB = {
+            "x": posB["x"] + centerB["x"] + sizeB["x"] / 2.0,
+            "y": posB["y"] + centerB["y"] + sizeB["y"] / 2.0,
+            "z": posB["z"] + centerB["z"] + sizeB["z"] / 2.0
+        }
+        
+        return aabbOverlap(minA, maxA, minB, maxB)
+    }
+    
+    return false
+}
+
+fn aabbOverlap(minA, maxA, minB, maxB) {
+    return minA["x"] <= maxB["x"] && maxA["x"] >= minB["x"] &&
+           minA["y"] <= maxB["y"] && maxA["y"] >= minB["y"] &&
+           minA["z"] <= maxB["z"] && maxA["z"] >= minB["z"]
+}
+
+pub fn raycast(scene, physicsWorld, origin, direction, maxDistance) {
+    if maxDistance == null || maxDistance == undefined { maxDistance = 1000.0 }
+    
+    let world = scene["world"]
+    let hits = []
+    
+    for entityId in physicsWorld["colliders"] {
+        let collider = physicsWorld["colliders"][entityId]
+        if collider != null && collider != undefined && collider["enabled"] == true {
+            let transform = get(world, entityId, "Transform")
+            
+            if transform != null {
+                let hit = raycastCollider(collider, transform, origin, direction, maxDistance)
+                if hit != null {
+                    hits = push(hits, {
+                        "entityId": entityId,
+                        "distance": hit["distance"],
+                        "point": hit["point"],
+                        "normal": hit["normal"]
+                    })
+                }
+            }
+        }
+    }
+    
+    return hits
+}
+
+fn raycastCollider(collider, transform, origin, direction, maxDistance) {
+    let pos = { "x": transform["x"], "y": transform["y"], "z": transform["z"] }
+    
+    if collider["kind"] == "SphereCollider" {
+        let center = collider["center"]
+        let radius = collider["radius"]
+        let sphereCenter = {
+            "x": pos["x"] + center["x"],
+            "y": pos["y"] + center["y"],
+            "z": pos["z"] + center["z"]
+        }
+        
+        let oc = {
+            "x": origin["x"] - sphereCenter["x"],
+            "y": origin["y"] - sphereCenter["y"],
+            "z": origin["z"] - sphereCenter["z"]
+        }
+        
+        let a = direction["x"] * direction["x"] + direction["y"] * direction["y"] + direction["z"] * direction["z"]
+        let b = 2.0 * (oc["x"] * direction["x"] + oc["y"] * direction["y"] + oc["z"] * direction["z"])
+        let c = (oc["x"] * oc["x"] + oc["y"] * oc["y"] + oc["z"] * oc["z"]) - radius * radius
+        
+        let discriminant = b * b - 4.0 * a * c
+        
+        if discriminant >= 0.0 {
+            let t = (-b - sqrt(discriminant)) / (2.0 * a)
+            if t >= 0.0 && t <= maxDistance {
+                let point = {
+                    "x": origin["x"] + direction["x"] * t,
+                    "y": origin["y"] + direction["y"] * t,
+                    "z": origin["z"] + direction["z"] * t
+                }
+                let normal = {
+                    "x": point["x"] - sphereCenter["x"],
+                    "y": point["y"] - sphereCenter["y"],
+                    "z": point["z"] - sphereCenter["z"]
+                }
+                let len = sqrt(normal["x"] * normal["x"] + normal["y"] * normal["y"] + normal["z"] * normal["z"])
+                if len > 0.0001 {
+                    normal["x"] = normal["x"] / len
+                    normal["y"] = normal["y"] / len
+                    normal["z"] = normal["z"] / len
+                }
+                return { "distance": t, "point": point, "normal": normal }
+            }
+        }
+    }
+    
+    return null
+}
+
+pub fn overlapSphere(scene, physicsWorld, position, radius) {
+    let world = scene["world"]
+    let overlaps = []
+    
+    for entityId in physicsWorld["colliders"] {
+        let collider = physicsWorld["colliders"][entityId]
+        if collider != null && collider != undefined && collider["enabled"] == true {
+            let transform = get(world, entityId, "Transform")
+            
+            if transform != null {
+                let pos = { "x": transform["x"], "y": transform["y"], "z": transform["z"] }
+                let dx = pos["x"] - position["x"]
+                let dy = pos["y"] - position["y"]
+                let dz = pos["z"] - position["z"]
+                let dist = sqrt(dx * dx + dy * dy + dz * dz)
+                
+                if dist < radius {
+                    overlaps = push(overlaps, entityId)
+                }
+            }
+        }
+    }
+    
+    return overlaps
+}
+
+pub fn applyForce(physicsWorld, entityId, force) {
+    let rb = physicsWorld["rigidbodies"]["" + entityId]
+    if rb != null && rb != undefined && rb["isKinematic"] != true {
+        let fx = force["x"] / rb["mass"]
+        let fy = force["y"] / rb["mass"]
+        let fz = force["z"] / rb["mass"]
+        
+        rb["velocity"]["x"] = rb["velocity"]["x"] + fx
+        rb["velocity"]["y"] = rb["velocity"]["y"] + fy
+        rb["velocity"]["z"] = rb["velocity"]["z"] + fz
+        
+        physicsWorld["rigidbodies"][entityId] = rb
+    }
+    return physicsWorld
+}
+
+pub fn setVelocity(physicsWorld, entityId, velocity) {
+    let rb = physicsWorld["rigidbodies"][entityId]
+    if rb != null && rb != undefined {
+        rb["velocity"] = velocity
+        physicsWorld["rigidbodies"][entityId] = rb
+    }
+    return physicsWorld
+}
+
+pub fn getVelocity(physicsWorld, entityId) {
+    let rb = physicsWorld["rigidbodies"][entityId]
+    if rb != null && rb != undefined {
+        return rb["velocity"]
+    }
+    return { "x": 0.0, "y": 0.0, "z": 0.0 }
+}

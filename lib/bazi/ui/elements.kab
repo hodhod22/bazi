@@ -1,0 +1,223 @@
+@version "1.0.0"
+
+// import "bazi/ui/elements"
+// Unity-like UI elements (Image, Text, Button, etc).
+
+pub fn createRectTransform() {
+    return {
+        "kind": "RectTransform",
+        "anchoredPosition": { "x": 0.0, "y": 0.0 },
+        "sizeDelta": { "x": 100.0, "y": 100.0 },
+        "anchorMin": { "x": 0.5, "y": 0.5 },
+        "anchorMax": { "x": 0.5, "y": 0.5 },
+        "pivot": { "x": 0.5, "y": 0.5 },
+        "rotation": 0.0,
+        "scale": { "x": 1.0, "y": 1.0 }
+    }
+}
+
+pub fn createImage(color, sprite) {
+    if color == null || color == undefined { color = { "r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0 } }
+    
+    return {
+        "kind": "Image",
+        "id": "",
+        "color": color,
+        "sprite": sprite,
+        "material": null,
+        "type": "simple",
+        "fillCenter": true,
+        "preserveAspect": false,
+        "useSpriteMesh": false,
+        "raycastTarget": true,
+        "maskable": true
+    }
+}
+
+pub fn setImageColor(image, r, g, b, a) {
+    image["color"] = { "r": r, "g": g, "b": b, "a": a }
+    return image
+}
+
+pub fn createText(text, fontSize, color) {
+    if text == null || text == undefined { text = "" }
+    if fontSize == null || fontSize == undefined { fontSize = 14 }
+    if color == null || color == undefined { color = { "r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0 } }
+    
+    return {
+        "kind": "Text",
+        "id": "",
+        "text": text,
+        "font": null,
+        "fontSize": fontSize,
+        "fontStyle": "normal",
+        "lineSpacing": 1.0,
+        "color": color,
+        "alignment": "center",
+        "alignByGeometry": false,
+        "horizontalOverflow": "wrap",
+        "verticalOverflow": "truncate",
+        "bestFit": false,
+        "minSize": 0,
+        "maxSize": 0,
+        "raycastTarget": false
+    }
+}
+
+pub fn setTextContent(textComponent, text) {
+    textComponent["text"] = text
+    return textComponent
+}
+
+pub fn setTextColor(textComponent, r, g, b, a) {
+    textComponent["color"] = { "r": r, "g": g, "b": b, "a": a }
+    return textComponent
+}
+
+pub fn setTextFontSize(textComponent, fontSize) {
+    textComponent["fontSize"] = fontSize
+    return textComponent
+}
+
+pub fn createButton() {
+    return {
+        "kind": "Button",
+        "id": "",
+        "interactable": true,
+        "transition": "colorTint",
+        "colors": {
+            "normalColor": { "r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0 },
+            "highlightedColor": { "r": 0.96, "g": 0.96, "b": 0.96, "a": 1.0 },
+            "pressedColor": { "r": 0.78, "g": 0.78, "b": 0.78, "a": 1.0 },
+            "selectedColor": { "r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0 },
+            "disabledColor": { "r": 0.78, "g": 0.78, "b": 0.78, "a": 0.5 }
+        },
+        "targetGraphic": null,
+        "onClick": null
+    }
+}
+
+pub fn setButtonInteractable(button, interactable) {
+    button["interactable"] = interactable == true
+    return button
+}
+
+pub fn setButtonOnClick(button, callback) {
+    button["onClick"] = callback
+    return button
+}
+
+pub fn createSlider(minValue, maxValue, value) {
+    if minValue == null || minValue == undefined { minValue = 0.0 }
+    if maxValue == null || maxValue == undefined { maxValue = 1.0 }
+    if value == null || value == undefined { value = 0.5 }
+    
+    return {
+        "kind": "Slider",
+        "id": "",
+        "minValue": minValue,
+        "maxValue": maxValue,
+        "value": value,
+        "wholeNumbers": false,
+        "direction": "leftToRight",
+        "fillRect": null,
+        "handleRect": null,
+        "onValueChanged": null
+    }
+}
+
+pub fn setSliderValue(slider, value) {
+    if value < slider["minValue"] { value = slider["minValue"] }
+    if value > slider["maxValue"] { value = slider["maxValue"] }
+    slider["value"] = value
+    return slider
+}
+
+pub fn setSliderOnValueChanged(slider, callback) {
+    slider["onValueChanged"] = callback
+    return slider
+}
+
+pub fn createToggle(isOn) {
+    if isOn == null || isOn == undefined { isOn = false }
+    
+    return {
+        "kind": "Toggle",
+        "id": "",
+        "isOn": isOn,
+        "toggleTransition": "fade",
+        "graphic": null,
+        "group": null,
+        "onValueChanged": null
+    }
+}
+
+pub fn setToggleIsOn(toggle, isOn) {
+    toggle["isOn"] = isOn == true
+    return toggle
+}
+
+pub fn setToggleOnValueChanged(toggle, callback) {
+    toggle["onValueChanged"] = callback
+    return toggle
+}
+
+pub fn createInputField(text, placeholder) {
+    if text == null || text == undefined { text = "" }
+    if placeholder == null || placeholder == undefined { placeholder = "Enter text..." }
+    
+    return {
+        "kind": "InputField",
+        "id": "",
+        "text": text,
+        "placeholder": placeholder,
+        "contentType": "standard",
+        "lineType": "singleLine",
+        "characterLimit": 0,
+        "readOnly": false,
+        "onValueChanged": null,
+        "onEndEdit": null
+    }
+}
+
+pub fn setInputFieldText(inputField, text) {
+    inputField["text"] = text
+    return inputField
+}
+
+pub fn setInputFieldOnValueChanged(inputField, callback) {
+    inputField["onValueChanged"] = callback
+    return inputField
+}
+
+pub fn createScrollView() {
+    return {
+        "kind": "ScrollView",
+        "id": "",
+        "content": null,
+        "horizontal": false,
+        "vertical": true,
+        "movementType": "elastic",
+        "elasticity": 0.1,
+        "inertia": true,
+        "decelerationRate": 0.135,
+        "scrollbarVisibility": "permanent",
+        "onValueChanged": null
+    }
+}
+
+pub fn createPanel(color) {
+    if color == null || color == undefined { color = { "r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0 } }
+    
+    return {
+        "kind": "Panel",
+        "id": "",
+        "color": color,
+        "raycastTarget": true
+    }
+}
+
+pub fn setPanelColor(panel, r, g, b, a) {
+    panel["color"] = { "r": r, "g": g, "b": b, "a": a }
+    return panel
+}

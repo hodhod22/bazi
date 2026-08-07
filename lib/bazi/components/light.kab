@@ -1,0 +1,75 @@
+@version "1.0.0"
+
+// import "bazi/components/light"
+// Unity-like Light component for scene lighting.
+
+pub fn createLight(lightType) {
+    if lightType == null || lightType == undefined { lightType = "point" }
+    
+    return {
+        "kind": "Light",
+        "type": lightType,
+        "color": { "r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0 },
+        "intensity": 1.0,
+        "range": 10.0,
+        "spotAngle": 30.0,
+        "innerSpotAngle": 21.8,
+        "shadows": {
+            "type": "soft",
+            "resolution": 1024,
+            "strength": 1.0,
+            "bias": 0.05,
+            "normalBias": 0.4,
+            "nearPlaneOffset": 0.2
+        },
+        "cookieSize": 10.0,
+        "cookie": null,
+        "shadowCustomResolution": -1,
+        "shadowNearPlane": 0.2,
+        "shadowResolution": 1,
+        "shadowBias": 0.05,
+        "shadowNormalBias": 0.4,
+        "shadowMatrixMode": 0,
+        "cullingMask": -1,
+        "renderMode": "auto",
+        "bakedIndex": -1
+    }
+}
+
+pub fn setLightType(light, lightType) {
+    light["type"] = lightType
+    return light
+}
+
+pub fn setLightColor(light, r, g, b) {
+    light["color"] = { "r": r, "g": g, "b": b, "a": 1.0 }
+    return light
+}
+
+pub fn setLightIntensity(light, intensity) {
+    light["intensity"] = intensity
+    return light
+}
+
+pub fn setLightRange(light, range) {
+    light["range"] = range
+    return light
+}
+
+pub fn setLightSpotAngle(light, angle) {
+    light["spotAngle"] = angle
+    return light
+}
+
+pub fn setLightShadows(light, shadowType, strength) {
+    light["shadows"]["type"] = shadowType
+    if strength != null && strength != undefined {
+        light["shadows"]["strength"] = strength
+    }
+    return light
+}
+
+pub fn setLightCullingMask(light, mask) {
+    light["cullingMask"] = mask
+    return light
+}

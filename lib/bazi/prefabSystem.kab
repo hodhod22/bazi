@@ -1,0 +1,253 @@
+@version "1.0.0"
+
+// import "bazi/prefabSystem"
+// Advanced prefab system with nesting and instancing for Unity-like workflow.
+
+pub fn createPrefab(name) {
+    return {
+        "kind": "Prefab",
+        "name": name,
+        "rootGameObject": null,
+        "components": [],
+        "children": [],
+        "prefabInstances": [],
+        "nestedPrefabs": {},
+        "overrides": {}
+    }
+}
+
+pub fn setPrefabRoot(prefab, gameObject) {
+    prefab["rootGameObject"] = gameObject
+    return prefab
+}
+
+pub fn addPrefabComponent(prefab, component) {
+    prefab["components"] = push(prefab["components"], component)
+    return prefab
+}
+
+pub fn addPrefabChild(prefab, childPrefab) {
+    prefab["children"] = push(prefab["children"], childPrefab)
+    prefab["nestedPrefabs"][childPrefab["name"]] = childPrefab
+    return prefab
+}
+
+pub fn instantiatePrefab(scene, prefab, position, rotation, parent) {
+    if position == null || position == undefined { position = { "x": 0.0, "y": 0.0, "z": 0.0 } }
+    if rotation == null || rotation == undefined { rotation = { "x": 0.0, "y": 0.0, "z": 0.0 } }
+    
+    let spawned = spawnGo(scene, prefab["name"])
+    scene = spawned["scene"]
+    let id = spawned["id"]
+    
+    let i = 0
+    while i < len(prefab["components"]) {
+        let comp = prefab["components"][i]
+        scene = addComp(scene, id, comp["kind"], comp)
+        i = i + 1
+    }
+    
+    let transform = createTransform(position["x"], position["y"], position["z"])
+    transform["yaw"] = rotation["y"]
+    scene = addComp(scene, id, "Transform", transform)
+    
+    let instance = {
+        "prefab": prefab,
+        "instanceId": id,
+        "position": position,
+        "rotation": rotation,
+        "parent": parent,
+        "children": []
+    }
+    
+    prefab["prefabInstances"] = push(prefab["prefabInstances"], instance)
+    
+    let i = 0
+    while i < len(prefab["children"]) {
+        let childPrefab = prefab["children"][i]
+        let childPos = {
+            "x": position["x"] + 0.0,
+            "y": position["y"] + 0.0,
+            "z": position["z"] + 0.0
+        }
+        let childInstance = instantiatePrefab(scene, childPrefab, childPos, rotation, id)
+        instance["children"] = push(instance["children"], childInstance["instanceId"])
+        i = i + 1
+    }
+    
+    return { "scene": scene, "id": id, "instance": instance }
+}
+
+pub fn destroyPrefabInstance(scene, prefab, instanceId) {
+    let instances = prefab["prefabInstances"]
+    let nextInstances = []
+    let i = 0
+    while i < len(instances) {
+        let inst = instances[i]
+        if inst["instanceId"] != instanceId {
+            nextInstances = push(nextInstances, inst)
+        } else {
+            let j = 0
+            while j < len(inst["children"]) {
+                scene = destroyGo(scene, inst["children"][j])
+                j = j + 1
+            }
+            scene = destroyGo(scene, instanceId)
+        }
+        i = i + 1
+    }
+    prefab["prefabInstances"] = nextInstances
+    return scene
+}
+
+pub fn applyPrefabOverride(prefab, instanceId, componentPath, property, value) {
+    let overrideKey = "" + instanceId + ":" + componentPath
+    if prefab["overrides"][overrideKey] == null {
+        prefab["overrides"][overrideKey] = {}
+    }
+    prefab["overrides"][overrideKey][property] = value
+    return prefab
+}
+
+pub fn getPrefabOverride(prefab, instanceId, componentPath, property) {
+    let overrideKey = "" + instanceId + ":" + componentPath
+    if prefab["overrides"][overrideKey] != null {
+        return prefab["overrides"][overrideKey][property]
+    }
+    return null
+}
+
+pub fn revertPrefabOverride(prefab, instanceId, componentPath, property) {
+    let overrideKey = "" + instanceId + ":" + componentPath
+    if prefab["overrides"][overrideKey] != null {
+        prefab["overrides"][overrideKey][property] = null
+    }
+    return prefab
+}
+
+pub fn revertAllPrefabOverrides(prefab, instanceId) {
+    let i = 0
+    while i < len(prefab["prefabInstances"]) {
+        let inst = prefab["prefabInstances"][i]
+        if inst["instanceId"] == instanceId {
+            let overrideKey = "" + instanceId
+            prefab["overrides"][overrideKey] = null
+        }
+        i = i + 1
+    }
+    return prefab
+}
+
+pub fn getPrefabInstanceCount(prefab) {
+    return len(prefab["prefabInstances"])
+}
+
+pub fn findPrefabInstance(prefab, instanceId) {
+    let i = 0
+    while i < len(prefab["prefabInstances"]) {
+        let inst = prefab["prefabInstances"][i]
+        if inst["instanceId"] == instanceId {
+            return inst
+        }
+        i = i + 1
+    }
+    return null
+}
+
+pub fn prefabPool(prefab, initialSize) {
+    if initialSize == null || initial == undefined { initialSize = 10 }
+    
+    return {
+        "kind": "PrefabPool",
+        "prefab": prefab,
+        "pool": [],
+        "activeInstances": [],
+        "maxSize": 100
+    }
+}
+
+pub fn poolInstantiate(pool, scene, position, rotation) {
+    if len(pool["pool"]) > 0 {
+        let instance = pool["pool"][len(pool["pool"]) - 1]
+        pool["pool"] = pop(pool["pool"])
+        pool["activeInstances"] = push(pool["activeInstances"], instance)
+        
+        let transform = getComp(scene, instance["instanceId"], "Transform")
+        if transform != null {
+            transform["x"] = position["x"]
+            transform["y"] = position["y"]
+            transform["z"] = position["z"]
+            scene = addComp(scene, instance["instanceId"], "Transform", transform)
+        }
+        
+        return { "scene": scene, "id": instance["instanceId"] }
+    } else {
+        if len(pool["activeInstances"]) < pool["maxSize"] {
+            let spawned = instantiatePrefab(scene, pool["prefab"], position, rotation, null)
+            pool["activeInstances"] = push(pool["activeInstances"], spawned["instance"])
+            return spawned
+        }
+    }
+    return null
+}
+
+pub fn poolDestroy(pool, scene, instanceId) {
+    let i = 0
+    while i < len(pool["activeInstances"]) {
+        let inst = pool["activeInstances"][i]
+        if inst["instanceId"] == instanceId {
+            pool["activeInstances"] = remove(pool["activeInstances"], i)
+            pool["pool"] = push(pool["pool"], inst)
+            
+            let go = getComp(scene, instanceId, "GameObject")
+            if go != null {
+                go["active"] = false
+                scene = addComp(scene, instanceId, "GameObject", go)
+            }
+            break
+        }
+        i = i + 1
+    }
+    return scene
+}
+
+pub fn poolPrewarm(pool, scene, count) {
+    let i = 0
+    while i < count {
+        let spawned = instantiatePrefab(scene, pool["prefab"], { "x": 0.0, "y": 0.0, "z": 0.0 }, { "x": 0.0, "y": 0.0, "z": 0.0 }, null)
+        let go = getComp(scene, spawned["id"], "GameObject")
+        if go != null {
+            go["active"] = false
+            scene = addComp(scene, spawned["id"], "GameObject", go)
+        }
+        pool["pool"] = push(pool["pool"], spawned["instance"])
+        i = i + 1
+    }
+    return scene
+}
+
+pub fn prefabVariant(basePrefab, name) {
+    let variant = createPrefab(name)
+    variant["basePrefab"] = basePrefab
+    variant["components"] = basePrefab["components"]
+    variant["children"] = basePrefab["children"]
+    return variant
+}
+
+pub fn savePrefab(prefab, path) {
+    let prefabData = {
+        "name": prefab["name"],
+        "components": prefab["components"],
+        "children": prefab["children"],
+        "nestedPrefabs": prefab["nestedPrefabs"]
+    }
+    return prefabData
+}
+
+pub fn loadPrefab(prefabData) {
+    let prefab = createPrefab(prefabData["name"])
+    prefab["components"] = prefabData["components"]
+    prefab["children"] = prefabData["children"]
+    prefab["nestedPrefabs"] = prefabData["nestedPrefabs"]
+    return prefab
+}
